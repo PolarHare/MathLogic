@@ -35,11 +35,7 @@ public class Variable extends Expression {
 
         Variable variable = (Variable) o;
 
-        if (!name.equals(variable.name)) {
-            return false;
-        }
-
-        return true;
+        return name.equals(variable.name);
     }
 
     @Override
