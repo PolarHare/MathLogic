@@ -8,7 +8,7 @@ ProofChecker
 
 ProofChecker automatically checks given in file proof.
 
-To check proof in file filename.txt execute:
+To check proof in file filename.txt execute (without arguments, ProofChecker will try to read proof from file proof.txt, that contains three proofs and located in root folder):
 
     java -jar ProofChecker-executable.jar filename.txt
     
