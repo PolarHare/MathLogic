@@ -79,24 +79,16 @@ public class ProofChecker {
     }
 
     private boolean checkExpression(Expression expression) {
-        if (isCorespondsToAxiom(expression)) {
-            return true;
-        }
-        if (wasProofed(expression)) {
-            return true;
-        }
-        if (proofedByModusPonons(expression)) {
-            return true;
-        }
-        return false;
+        return isCorespondsToAxiom(expression) || wasProofed(expression) || proofedByModusPonons(expression);
     }
 
     private String checkProof(BufferedReader in) throws IOException {
         String curLine = in.readLine();
         int lineNumber = 1;
         ExpressionParser parser = new ExpressionParser();
+        int firstIncorrectLine = -1;
         while (curLine != null && !curLine.startsWith(END_OF_PROOF_PREFIX)) {
-            if (!curLine.startsWith(COMMENT_PREFIX) && !curLine.isEmpty()) {
+            if (!curLine.startsWith(COMMENT_PREFIX) && !curLine.isEmpty() && firstIncorrectLine == -1) {
                 int commentIndex = curLine.indexOf(COMMENT_PREFIX);
                 if (commentIndex != -1) {
                     curLine = curLine.substring(0, commentIndex);
@@ -104,14 +96,18 @@ public class ProofChecker {
                 curLine = curLine.trim();
                 Expression expression = parser.parseExpression(curLine);
                 if (!checkExpression(expression)) {
-                    return "Proof is incorrect from the line number " + lineNumber + ".";
+                    firstIncorrectLine = lineNumber;
                 }
                 proofedExpressions.add(expression);
             }
             curLine = in.readLine();
             lineNumber++;
         }
-        return "Proof is correct.";
+        if (firstIncorrectLine == -1) {
+            return "Proof is correct.";
+        } else {
+            return "Proof is incorrect from the line number " + firstIncorrectLine + ".";
+        }
     }
 
     private static final String DEFAULT_INPUT_FILE = "proof.txt";
