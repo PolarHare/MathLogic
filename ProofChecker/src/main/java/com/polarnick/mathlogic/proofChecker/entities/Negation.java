@@ -31,6 +31,6 @@ public class Negation extends Expression {
 
     @Override
     public boolean compareToExpression(Expression expression) {
-        return false;
+        return expression.getClass() == Negation.class && this.expression.compareToExpression(((Negation) expression).expression);
     }
 }

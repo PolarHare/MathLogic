@@ -69,8 +69,8 @@ public class ProofChecker {
         for (Expression proofed : proofedExpressions) {
             if (proofed.getClass() == Consecution.class) {
                 Consecution proofedConsecution = (Consecution) proofed;
-                if (wasProofed(proofedConsecution.getLeft())
-                        && expression.compareToExpression(proofedConsecution.getRight())) {
+                if (expression.compareToExpression(proofedConsecution.getRight())
+                        && wasProofed(proofedConsecution.getLeft())) {
                     return true;
                 }
             }
@@ -79,7 +79,7 @@ public class ProofChecker {
     }
 
     private boolean checkExpression(Expression expression) {
-        return isCorespondsToAxiom(expression) || wasProofed(expression) || proofedByModusPonons(expression);
+        return isCorespondsToAxiom(expression) || proofedByModusPonons(expression);
     }
 
     private String checkProof(BufferedReader in) throws IOException {
