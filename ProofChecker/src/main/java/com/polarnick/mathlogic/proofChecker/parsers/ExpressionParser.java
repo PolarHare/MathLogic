@@ -1,9 +1,15 @@
 package com.polarnick.mathlogic.proofChecker.parsers;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.polarnick.mathlogic.proofChecker.entities.*;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.Stack;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /*
  * ⟨выражение⟩ ::= ⟨дизъюнкция⟩ | ⟨дизъюнкция⟩ ‘->’ ⟨выражение⟩
@@ -18,6 +24,16 @@ import java.util.Stack;
  * @author Nickolay Polyarniy aka PolarNick
  */
 public class ExpressionParser {
+
+    public List<String> getAllVariables(String line) {
+        Set<String> matches = new HashSet<String>();
+        String regexp = "[A-Z][0-9]*";
+        Matcher m = Pattern.compile("(?=(" + regexp + "))").matcher(line);
+        while (m.find()) {
+            matches.add(m.group(1));
+        }
+        return Lists.newArrayList(matches);
+    }
 
     private static class StringWithBrackets {
         private final String string;

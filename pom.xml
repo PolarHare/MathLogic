@@ -11,6 +11,7 @@
     <modules>
         <module>ProofChecker</module>
         <module>AssumptionConverter</module>
+        <module>Proofer</module>
     </modules>
 
     <dependencies>

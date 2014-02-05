@@ -1,5 +1,7 @@
 package com.polarnick.mathlogic.proofChecker.entities;
 
+import java.util.Map;
+
 /**
  * Date: 13.01.14 at 16:55
  *
@@ -11,4 +13,8 @@ public class NamedAnyExpression extends Variable {
         super(name);
     }
 
+    @Override
+    public boolean evaluate(Map<String, Boolean> values) {
+        throw new UnsupportedOperationException("Patterns can not be evaluated!");
+    }
 }

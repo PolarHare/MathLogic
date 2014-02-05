@@ -32,4 +32,22 @@ AssumptionConverter-executable.jar file can be found from ./AssumptionConverter/
 assumption.txt - example file can be found in root folder:
 https://github.com/PolarHare/MathLogic/blob/master/assumption.txt
 
-Result will be written in file result.txt (example can be found in root of repository)
+Result will be written in file result.txt (example can be found in root of repository):
+https://github.com/PolarHare/MathLogic/blob/master/result.txt
+
+Proofer
+------------
+
+Proofer checks expression and proofs it.
+
+To run on file filename.txt execute (without arguments it will try to read from file toProof.txt):
+
+    java -jar Proofer-executable.jar filename.txt
+
+Proofer-executable.jar file can be found from ./Proofer/target/ folder:  https://github.com/PolarHare/MathLogic/blob/master/Proofer/target/Proofer-executable.jar
+
+toProof.txt - example file can be found in root folder:
+https://github.com/PolarHare/MathLogic/blob/master/toProof.txt
+
+Result will be written in file resultProof.txt (example can be found in root of repository):
+https://github.com/PolarHare/MathLogic/blob/master/resultProof.txt

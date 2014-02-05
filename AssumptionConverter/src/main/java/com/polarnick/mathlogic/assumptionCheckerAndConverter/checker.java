@@ -85,57 +85,70 @@ public class Checker {
         return false;
     }
 
-    private String checkProof(BufferedReader in, PrintWriter out) throws IOException {
-        ExpressionParser parser = new ExpressionParser();
-        String curLine = in.readLine();
-        while(curLine.isEmpty()) {
-            curLine = in.readLine();
+    public static class ProofWithAssumptions {
+        public List<Expression> assumptions;
+        public Expression alphaAssum;
+        public Expression toBeProofed;
+        public List<Expression> steps;
+
+        public ProofWithAssumptions(List<Expression> assumptions, Expression alphaAssum, Expression toBeProofed, List<Expression> steps) {
+            this.assumptions = assumptions;
+            this.alphaAssum = alphaAssum;
+            this.toBeProofed = toBeProofed;
+            this.steps = steps;
         }
-        String[] lineParts = curLine.split("(,|\\|-)");
-        for (int i = 0; i < lineParts.length - 2; i++) {
-            assumptions.add(parser.parseExpression(lineParts[i]));
+    }
+
+    public List<Expression> totalyDeduct(List<Expression> assumptions, Expression toBeProofed, List<Expression> steps) {
+        ProofWithAssumptions proof = new ProofWithAssumptions(
+                assumptions.subList(0, assumptions.size() - 1), assumptions.get(assumptions.size() - 1), toBeProofed, steps);
+        while (proof.alphaAssum != null) {
+            proof = new Checker().useDeductionConvertion(proof);
         }
-        Expression alpha = parser.parseExpression(lineParts[lineParts.length - 2]);
-        curLine = in.readLine();
-        for (int i = 0; i < assumptions.size(); i++) {
-            out.print(assumptions.get(i));
-            if (i + 1 != assumptions.size()) {
-                out.print(",");
-            } else {
-                out.println("|-" + new Consecution(alpha, parser.parseExpression(lineParts[lineParts.length - 1])));
-            }
+        return proof.steps;
+    }
+
+    public ProofWithAssumptions useDeductionConvertion(ProofWithAssumptions proof) {
+        List<Expression> resAssumptions = new ArrayList<Expression>();
+        Expression resAlpha = null;
+        Expression resToBeProofed = null;
+        List<Expression> resSteps = new ArrayList<Expression>();
+        for (Expression ass : proof.assumptions) {
+            assumptions.add(ass);
         }
-        int lineNumber = 2;
+        StringBuilder firstLine = new StringBuilder();
+        for (int i = 0; i < assumptions.size() - 1; i++) {
+            resAssumptions.add(assumptions.get(i));
+        }
+        if (assumptions.size() >= 1) {
+            resAlpha = assumptions.get(assumptions.size() - 1);
+        }
+        resToBeProofed = new Consecution(proof.alphaAssum, proof.toBeProofed);
         int firstIncorrectLine = -1;
-        while (curLine != null && !curLine.startsWith(END_OF_PROOF_PREFIX)) {
-            if (!curLine.startsWith(COMMENT_PREFIX) && !curLine.isEmpty() && firstIncorrectLine == -1) {
-                int commentIndex = curLine.indexOf(COMMENT_PREFIX);
-                if (commentIndex != -1) {
-                    curLine = curLine.substring(0, commentIndex);
-                }
-                curLine = curLine.trim();
-                Expression expI = parser.parseExpression(curLine);
+        int lineNumber = 0;
+        for (Expression expI : proof.steps) {
+            if (firstIncorrectLine == -1) {
                 proofedExpressions.add(expI);
                 if (isCorespondsToAxiom(expI) || containsIn(assumptions, expI)) {
-                    Expression alphaConsSigma = new Consecution(alpha, expI);
-                    out.println(expI);
-                    out.println(new Consecution(expI, alphaConsSigma));
-                    out.println(alphaConsSigma);
-                } else if (expI.compareToExpression(alpha)) {
-                    Expression AA = new Consecution(alpha, alpha);
-                    Expression A_AA = new Consecution(alpha, AA);
-                    Expression AA_A = new Consecution(AA, alpha);
-                    Expression A__AA_A = new Consecution(alpha, AA_A);
+                    Expression alphaConsSigma = new Consecution(proof.alphaAssum, expI);
+                    resSteps.add(expI);
+                    resSteps.add(new Consecution(expI, alphaConsSigma));
+                    resSteps.add(alphaConsSigma);
+                } else if (expI.compareToExpression(proof.alphaAssum)) {
+                    Expression AA = new Consecution(proof.alphaAssum, proof.alphaAssum);
+                    Expression A_AA = new Consecution(proof.alphaAssum, AA);
+                    Expression AA_A = new Consecution(AA, proof.alphaAssum);
+                    Expression A__AA_A = new Consecution(proof.alphaAssum, AA_A);
                     Expression lemma1 = A_AA;
                     Expression lemma2 = new Consecution(A_AA, new Consecution(A__AA_A, AA));
                     Expression lemma3 = new Consecution(A__AA_A, AA);
                     Expression lemma4 = A__AA_A;
                     Expression lemma5 = AA;
-                    out.println(lemma1);
-                    out.println(lemma2);
-                    out.println(lemma3);
-                    out.println(lemma4);
-                    out.println(lemma5);
+                    resSteps.add(lemma1);
+                    resSteps.add(lemma2);
+                    resSteps.add(lemma3);
+                    resSteps.add(lemma4);
+                    resSteps.add(lemma5);
                 } else {
                     Expression expK = null;
                     Expression expJ = null;
@@ -153,25 +166,53 @@ public class Checker {
                     if (expK == null || expJ == null) {
                         firstIncorrectLine = lineNumber;
                     } else {
-                        Expression res2 = new Consecution(new Consecution(alpha, new Consecution(expJ, expI)),
-                                new Consecution(alpha, expI));
-                        Expression res1 = new Consecution(new Consecution(alpha, expJ), res2);
-                        out.println(res1);
-                        out.println(res2);
-                        out.println(new Consecution(alpha, expI));
+                        Expression res2 = new Consecution(new Consecution(proof.alphaAssum, new Consecution(expJ, expI)),
+                                new Consecution(proof.alphaAssum, expI));
+                        Expression res1 = new Consecution(new Consecution(proof.alphaAssum, expJ), res2);
+                        resSteps.add(res1);
+                        resSteps.add(res2);
+                        resSteps.add(new Consecution(proof.alphaAssum, expI));
                     }
                 }
             }
-            curLine = in.readLine();
             lineNumber++;
         }
-        out.println(END_OF_PROOF_PREFIX);
-        out.println();
-        if (firstIncorrectLine == -1) {
-            return "Proof is correct.";
+        if (firstIncorrectLine != -1) {
+            return null;
         } else {
-            return "Proof is incorrect from the line number " + firstIncorrectLine + ".";
+            return new ProofWithAssumptions(resAssumptions, resAlpha, resToBeProofed, resSteps);
         }
+    }
+
+    public List<String> useDeductionConvertion(List<String> source) {
+        ExpressionParser parser = new ExpressionParser();
+        String[] lineParts = source.get(0).split("(,|\\|-)");
+        List<Expression> exprAssums = new ArrayList<Expression>();
+        for (int i = 0; i < lineParts.length - 2; i++) {
+            exprAssums.add(parser.parseExpression(lineParts[i]));
+        }
+        Expression alphaAssum = parser.parseExpression(lineParts[lineParts.length - 2]);
+        Expression toBeProofed = parser.parseExpression(lineParts[lineParts.length - 1]);
+        List<Expression> steps = new ArrayList<Expression>();
+        for (int i = 1; i < source.size(); i++) {
+            steps.add(parser.parseExpression(source.get(i)));
+        }
+        ProofWithAssumptions newProof = useDeductionConvertion(new ProofWithAssumptions(exprAssums, alphaAssum, toBeProofed, steps));
+        List<String> result = new ArrayList<String>();
+        StringBuilder firstLine = new StringBuilder();
+        for (Expression ass : newProof.assumptions) {
+            firstLine.append(ass + ",");
+        }
+        if (newProof.alphaAssum != null) {
+            firstLine.append(newProof.alphaAssum + "|-" + newProof.toBeProofed);
+            result.add(firstLine.toString());
+        }
+        for (Expression step : newProof.steps) {
+            result.add(step.toString());
+        }
+        result.add(END_OF_PROOF_PREFIX);
+        result.add("");
+        return result;
     }
 
     private static final String DEFAULT_INPUT_FILE = "assumption.txt";
@@ -191,7 +232,24 @@ public class Checker {
         int proofNumber = 1;
         while (in.ready()) {
             Checker checker = new Checker();
-            String verdict = checker.checkProof(in, out);
+            List<String> input = new ArrayList<String>();
+            String curLine = in.readLine();
+            while (curLine != null && !curLine.equals(END_OF_PROOF_PREFIX)) {
+                if (!curLine.isEmpty()) {
+                    input.add(curLine);
+                }
+                curLine = in.readLine();
+            }
+            List<String> result = checker.useDeductionConvertion(input);
+            String verdict;
+            if (result == null) {
+                verdict = "proof is incorrect!";
+            } else {
+                verdict = "proof is correct. Covertation succeed!";
+                for (String str : result) {
+                    out.println(str);
+                }
+            }
             System.out.println("Proof #" + proofNumber + ": " + verdict);
             proofNumber++;
         }

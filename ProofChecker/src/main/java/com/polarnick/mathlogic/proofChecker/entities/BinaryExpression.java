@@ -1,5 +1,6 @@
 package com.polarnick.mathlogic.proofChecker.entities;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -9,8 +10,8 @@ import java.util.Map;
  */
 public abstract class BinaryExpression extends Expression {
 
-    private final Expression left;
-    private final Expression right;
+    private Expression left;
+    private Expression right;
 
     public BinaryExpression(Expression left, Expression right) {
         this.left = left;
@@ -60,4 +61,36 @@ public abstract class BinaryExpression extends Expression {
         return false;
     }
 
+    @Override
+    public boolean evaluate(Map<String, Boolean> values) {
+        return evaluate(left.evaluate(values), right.evaluate(values));
+    }
+
+    protected abstract boolean evaluate(boolean left, boolean right);
+
+    @Override
+    public void replace(Map<String, Expression> expForNamedAnyExpression) {
+        if (left.getClass() == NamedAnyExpression.class) {
+            NamedAnyExpression named = (NamedAnyExpression) left;
+            left = expForNamedAnyExpression.get(named.name);
+        } else {
+            left.replace(expForNamedAnyExpression);
+        }
+        if (right.getClass() == NamedAnyExpression.class) {
+            NamedAnyExpression named = (NamedAnyExpression) right;
+            right = expForNamedAnyExpression.get(named.name);
+        } else {
+            right.replace(expForNamedAnyExpression);
+        }
+    }
+
+    @Override
+    public void addSteps(Map<String, Boolean> varValues, List<Expression> steps) {
+        left.addSteps(varValues, steps);
+        right.addSteps(varValues, steps);
+        Expression.addSteps(getSolution(left.evaluate(varValues), right.evaluate(varValues)),
+                left, right, steps);
+    }
+
+    protected abstract String[] getSolution(boolean left, boolean right);
 }

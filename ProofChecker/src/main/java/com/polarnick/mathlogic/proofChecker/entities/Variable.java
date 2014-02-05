@@ -1,5 +1,6 @@
 package com.polarnick.mathlogic.proofChecker.entities;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -9,7 +10,7 @@ import java.util.Map;
  */
 public class Variable extends Expression {
 
-    private final String name;
+    public final String name;
 
     public Variable(String name) {
         this.name = name;
@@ -58,5 +59,22 @@ public class Variable extends Expression {
         }
         Variable variable = (Variable) expression;
         return name.equals(variable.getName());
+    }
+
+    @Override
+    public boolean evaluate(Map<String, Boolean> values) {
+        return values.get(name);
+    }
+
+    @Override
+    public void replace(Map<String, Expression> expForNamedAnyExpression) {
+    }
+
+    @Override
+    public void addSteps(Map<String, Boolean> varValues, List<Expression> steps) {
+        steps.add(evaluate(varValues) ?
+                this :
+                new Negation(this)
+        );
     }
 }

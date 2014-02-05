@@ -1,5 +1,9 @@
 package com.polarnick.mathlogic.proofChecker.entities;
 
+import com.polarnick.mathlogic.proofChecker.parsers.ExpressionPatternParser;
+
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,4 +29,24 @@ public abstract class Expression {
 
     public abstract boolean compareToExpression(Expression expression);
 
+    public abstract boolean evaluate(Map<String, Boolean> values);
+
+    public abstract void replace(Map<String, Expression> expForNamedAnyExpression);
+
+    public abstract void addSteps(Map<String, Boolean> varValues, List<Expression> steps);
+
+    protected static void addSteps(String[] solution, Expression A, Expression B, List<Expression> steps) {
+        ExpressionPatternParser parser = new ExpressionPatternParser();
+        for (String str : solution) {
+            Expression exp = parser.parseExpression(str);
+            Map<String, Expression> map = new HashMap<String, Expression>();
+            map.put("A", A);
+            map.put("B", B);
+            exp.replace(map);
+            if (exp.getClass() == NamedAnyExpression.class) {
+                exp = map.get(((NamedAnyExpression) exp).name);
+            }
+            steps.add(exp);
+        }
+    }
 }
