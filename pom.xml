@@ -12,6 +12,7 @@
         <module>ProofChecker</module>
         <module>AssumptionConverter</module>
         <module>Proofer</module>
+        <module>RecursiveFunctions</module>
     </modules>
 
     <dependencies>
