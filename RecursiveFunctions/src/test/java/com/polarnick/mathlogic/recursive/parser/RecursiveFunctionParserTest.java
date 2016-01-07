@@ -54,6 +54,28 @@ public class RecursiveFunctionParserTest {
     }
 
     @Test
+    public void testParsingIfPredefined() throws Exception {
+        AbstractRecursiveFunction foo = new RecursiveFunctionParser("If<U(1), U(2), U(3)>").parse();
+        assertEquals(foo.execute(0, 20, 30), 30);
+        assertEquals(foo.execute(1, 20, 30), 20);
+        assertEquals(foo.execute(2, 20, 30), 20);
+    }
+
+    @Test
+    public void testParsingEqualsPredefined() throws Exception {
+        AbstractRecursiveFunction foo = new RecursiveFunctionParser("Equal<U(1), U(2)>").parse();
+        assertEquals(foo.execute(0, 0), 1);
+        assertEquals(foo.execute(1, 1), 1);
+        assertEquals(foo.execute(2, 2), 1);
+
+        assertEquals(foo.execute(0, 1), 0);
+        assertEquals(foo.execute(1, 0), 0);
+        assertEquals(foo.execute(0, 2), 0);
+        assertEquals(foo.execute(2, 0), 0);
+        assertEquals(foo.execute(2, 5), 0);
+    }
+
+    @Test
     public void testParsingDivisionPredefined() throws Exception {
         AbstractRecursiveFunction foo = new RecursiveFunctionParser("Div").parse();
         assertEquals(foo.execute(1, 2), 0);
