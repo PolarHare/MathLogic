@@ -11,8 +11,8 @@ public class Substitution extends AbstractRecursiveFunction {
     }
 
     @Override
-    public int execute(int[] args) {
-        int[] results = new int[this.functions.length - 1];
+    public long execute(long[] args) {
+        long[] results = new long[this.functions.length - 1];
         for (int i = 1; i < this.functions.length; i++) {
             results[i - 1] = this.functions[i].execute(args);
         }

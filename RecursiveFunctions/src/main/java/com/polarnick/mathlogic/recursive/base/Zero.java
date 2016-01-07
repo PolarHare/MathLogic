@@ -6,7 +6,7 @@ package com.polarnick.mathlogic.recursive.base;
 public class Zero extends AbstractRecursiveFunction {
 
     @Override
-    public int execute(int[] args) {
+    public long execute(long[] args) {
         return 0;
     }
 }

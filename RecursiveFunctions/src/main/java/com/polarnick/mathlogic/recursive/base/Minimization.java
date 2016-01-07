@@ -14,9 +14,9 @@ public class Minimization extends AbstractRecursiveFunction {
     }
 
     @Override
-    public int execute(int[] args) {
+    public long execute(long[] args) {
         AbstractRecursiveFunction f = this.functions[0];
-        int[] xsY = Common.merge(args, 0);
+        long[] xsY = Common.merge(args, 0);
         for (int y = 0; y < 10000; y++) {
             xsY[xsY.length - 1] = y;
             if (f.execute(xsY) == 0) {

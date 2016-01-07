@@ -139,12 +139,14 @@ public class RecursiveFunctionParserTest {
                 {1, 2, 3},
                 {2, 3, 5},
                 {3, 4, 7},
+                {4, 5, 9}
         };
-        for (int n = 0; n < 3; n++) {
-            for (int m = 0; m < 3; m++) {
+        for (int n = 0; n < res.length; n++) {
+            for (int m = 0; m < res[0].length; m++) {
                 String test = "Ackermann(" + m + ", " + n + ")=" + res[n][m];
+                System.out.println(test + " ...");
                 assertEquals(foo.execute(m, n), res[n][m], test);
-                System.out.println(test + " - ok!");
+                System.out.println(test + " Ok!");
             }
         }
     }

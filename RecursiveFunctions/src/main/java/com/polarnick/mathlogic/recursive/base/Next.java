@@ -6,7 +6,7 @@ package com.polarnick.mathlogic.recursive.base;
 public class Next extends AbstractRecursiveFunction {
 
     @Override
-    public int execute(int[] args) {
+    public long execute(long[] args) {
         assert args.length == 1;
         return args[0] + 1;
     }

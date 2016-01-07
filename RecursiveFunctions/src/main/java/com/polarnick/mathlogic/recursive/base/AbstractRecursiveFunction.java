@@ -15,6 +15,6 @@ public abstract class AbstractRecursiveFunction {
         this.functions = functions;
     }
 
-    public abstract int execute(int... args);
+    public abstract long execute(long... args);
 
 }

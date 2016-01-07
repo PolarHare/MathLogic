@@ -85,9 +85,9 @@ public class FunctionsProfiler {
         }
 
         @Override
-        public int execute(int... args) {
+        public long execute(long... args) {
             long start = System.currentTimeMillis();
-            int result = this.function.execute(args);
+            long result = this.function.execute(args);
             long time = System.currentTimeMillis() - start;
             registerTime(this.key, time);
             return result;

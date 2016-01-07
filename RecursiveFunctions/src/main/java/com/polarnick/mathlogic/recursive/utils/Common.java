@@ -5,31 +5,31 @@ package com.polarnick.mathlogic.recursive.utils;
  */
 public final class Common {
 
-    public static int[] merge(int[] xs, int[] ys) {
-        int[] res = new int[xs.length + ys.length];
+    public static long[] merge(long[] xs, long[] ys) {
+        long[] res = new long[xs.length + ys.length];
         System.arraycopy(xs, 0, res, 0, xs.length);
         System.arraycopy(ys, 0, res, xs.length, ys.length);
         return res;
     }
 
-    public static int[] merge(int[] xs, int y) {
-        return merge(xs, new int[]{y});
+    public static long[] merge(long[] xs, long y) {
+        return merge(xs, new long[]{y});
     }
 
-    public static int[] merge(int[] xs, int[] ys, int[] zs) {
+    public static long[] merge(long[] xs, long[] ys, long[] zs) {
         return merge(merge(xs, ys), zs);
     }
 
-    public static int[] merge(int[] xs, int y, int[] zs) {
+    public static long[] merge(long[] xs, long y, long[] zs) {
         return merge(merge(xs, y), zs);
     }
 
-    public static int[] merge(int[] xs, int y, int z) {
+    public static long[] merge(long[] xs, long y, long z) {
         return merge(merge(xs, y), z);
     }
 
-    public static int[] subArray(int[] xs, int from, int to) {
-        int[] res = new int[to - from];
+    public static long[] subArray(long[] xs, int from, int to) {
+        long[] res = new long[to - from];
         System.arraycopy(xs, from + 0, res, 0, res.length);
         return res;
     }

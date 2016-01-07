@@ -13,12 +13,12 @@ public class Recursion extends AbstractRecursiveFunction {
     }
 
     @Override
-    public int execute(int[] args) {
+    public long execute(long[] args) {
         AbstractRecursiveFunction f = this.functions[0];
         AbstractRecursiveFunction g = this.functions[1];
 
-        int y = args[args.length - 1];
-        int[] xs = Common.subArray(args, 0, args.length - 1);
+        long y = args[args.length - 1];
+        long[] xs = Common.subArray(args, 0, args.length - 1);
         if (y == 0) {
             return f.execute(xs);
         } else {

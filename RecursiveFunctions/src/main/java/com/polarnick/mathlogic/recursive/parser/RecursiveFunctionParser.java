@@ -37,7 +37,7 @@ public class RecursiveFunctionParser {
         if (NATIVE_OPERATIONS) {
             registerFunction("Dec", new AbstractRecursiveFunction() {
                 @Override
-                public int execute(int... args) {
+                public long execute(long... args) {
                     return Math.max(args[0] - 1, 0);
                 }
             });
@@ -52,11 +52,9 @@ public class RecursiveFunctionParser {
         if (NATIVE_OPERATIONS) {
             registerFunction("Mul", new AbstractRecursiveFunction() {
                 @Override
-                public int execute(int... args) {
-                    long a = args[0];
-                    long b = args[1];
-                    if (a * b > Integer.MAX_VALUE) {
-                        throw new IllegalArgumentException("Integer overflow!");
+                public long execute(long... args) {
+                    if (args[1] != 0 && Long.MAX_VALUE / args[1] < args[0]) {
+                        throw new IllegalArgumentException("Long overflow!");
                     }
                     return args[0] * args[1];
                 }
@@ -68,7 +66,7 @@ public class RecursiveFunctionParser {
         if (NATIVE_OPERATIONS) {
             registerFunction("Equal0", new AbstractRecursiveFunction() {
                 @Override
-                public int execute(int... args) {
+                public long execute(long... args) {
                     if (args[0] == 0) {
                         return 1;
                     } else {
@@ -87,7 +85,7 @@ public class RecursiveFunctionParser {
         if (NATIVE_OPERATIONS) {
             registerFunction("Div", new AbstractRecursiveFunction() {
                 @Override
-                public int execute(int... args) {
+                public long execute(long... args) {
                     if (args[1] == 0) {
                         return 0;
                     }
@@ -101,7 +99,7 @@ public class RecursiveFunctionParser {
         if (NATIVE_OPERATIONS) {
             registerFunction("Mod", new AbstractRecursiveFunction() {
                 @Override
-                public int execute(int... args) {
+                public long execute(long... args) {
                     if (args[1] == 0) {
                         return args[0];
                     }

@@ -32,23 +32,23 @@ public class FunctionsExecutor {
         }
         BufferedReader in = new BufferedReader(new FileReader(fooFilename));
         String input = in.readLine();
-        int[] intArgs = new int[0];
+        long[] intArgs = new long[0];
 
         if (paramsFilename != null) {
             BufferedReader paramsIn = new BufferedReader(new FileReader(paramsFilename));
             StringTokenizer tok = new StringTokenizer(paramsIn.readLine());
-            List<Integer> params = new ArrayList<>();
+            List<Long> params = new ArrayList<>();
             while (tok.hasMoreTokens()) {
-                params.add(Integer.parseInt(tok.nextToken()));
+                params.add(Long.parseLong(tok.nextToken()));
             }
-            intArgs = new int[params.size()];
+            intArgs = new long[params.size()];
             for (int i = 0; i < params.size(); i++) {
                 intArgs[i] = params.get(i);
             }
         }
 
         AbstractRecursiveFunction foo = new RecursiveFunctionParser(input).parse();
-        int result = foo.execute(intArgs);
+        long result = foo.execute(intArgs);
         System.out.println(result);
     }
 

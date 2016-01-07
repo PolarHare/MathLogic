@@ -12,7 +12,7 @@ public class UProjection extends AbstractRecursiveFunction {
     }
 
     @Override
-    public int execute(int[] args) {
+    public long execute(long[] args) {
         return args[this.index];
     }
 }
