@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/PolarNick239/MathLogic.svg)](https://travis-ci.org/PolarNick239/MathLogic)
+
 MathLogic
 =========
 
@@ -51,3 +53,17 @@ https://github.com/PolarHare/MathLogic/blob/master/toProof.txt
 
 Result will be written in file resultProof.txt (example can be found in root of repository):
 https://github.com/PolarHare/MathLogic/blob/master/resultProof.txt
+
+RecursiveFunctions
+------------
+
+Recursive functions implementations and compiler.
+
+To compile and run recursive function from file inputFile with arguments parsed from paramsFile:
+
+    java -jar RecursiveFunctions-executable.jar inputFile paramsFile
+
+RecursiveFunctions-executable.jar file can be found from ./RecursiveFunctions/target/ folder:  https://github.com/PolarHare/MathLogic/blob/master/Proofer/target/Proofer-executable.jar
+
+recursiveFunction1Sum.txt - example of inputFile in root folder
+recursiveFunction1Params.txt - example of paramsFile in root folder
