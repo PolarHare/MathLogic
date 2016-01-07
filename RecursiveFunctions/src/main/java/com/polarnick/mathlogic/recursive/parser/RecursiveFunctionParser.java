@@ -1,6 +1,7 @@
 package com.polarnick.mathlogic.recursive.parser;
 
 import com.polarnick.mathlogic.recursive.base.*;
+import com.polarnick.mathlogic.recursive.utils.FunctionsProfiler;
 
 import java.util.*;
 
@@ -9,48 +10,142 @@ import java.util.*;
  */
 public class RecursiveFunctionParser {
 
+    private static boolean NATIVE_OPERATIONS = true;
+
     private static String emptyDelim = " \n\t";
     private static String delim = " ,<>()\n\t";
 
+    private static FunctionsProfiler profiler = new FunctionsProfiler(1000);
     private static Map<String, AbstractRecursiveFunction> parsers = new HashMap<>();
 
+    public static void registerFunction(String name, AbstractRecursiveFunction function) {
+        parsers.put(name, profiler.profile(name, function));
+    }
+
+    public static void parseAndRegisterFunction(String name, String function) {
+        registerFunction(name, new RecursiveFunctionParser(function).parse());
+    }
+
     static {
-        parsers.put("One", new RecursiveFunctionParser("S<N, Z>").parse());
+        parseAndRegisterFunction("One", "S<N, Z>");
 
         // Add(a, b) = a + b
-        parsers.put("Add", new RecursiveFunctionParser("R<U(1), S<N, U(3)>>").parse());
+        parseAndRegisterFunction("Add", "R<U(1), S<N, U(3)>>");
 
         // Dec(a) = max(a - 1, 0)
-        parsers.put("Dec", new RecursiveFunctionParser("R<Z, U(1)>").parse());
+        parseAndRegisterFunction("Dec", "R<Z, U(1)>");
+        if (NATIVE_OPERATIONS) {
+            registerFunction("Dec", new AbstractRecursiveFunction() {
+                @Override
+                public int execute(int... args) {
+                    return Math.max(args[0] - 1, 0);
+                }
+            });
+        }
         // Sub(a, b) = max(a - b, 0)
-        parsers.put("Sub", new RecursiveFunctionParser("R<U(1), S<Dec, U(3)>>").parse());
+        parseAndRegisterFunction("Sub", "R<U(1), S<Dec, U(3)>>");
 
-        parsers.put("If", new RecursiveFunctionParser("S<R<U(2), U(1)>, U(2), U(3), U(1)>").parse());
-        parsers.put("Not", new RecursiveFunctionParser("S<R<N, Z>, U(1), U(1)>").parse());
+        parseAndRegisterFunction("If", "S<R<U(2), U(1)>, U(2), U(3), U(1)>");
+        parseAndRegisterFunction("Not", "S<R<N, Z>, U(1), U(1)>");
 
-        parsers.put("Mul", new RecursiveFunctionParser("R<Z, S<Add, U(1), U(3)>>").parse());
-        parsers.put("Pow", new RecursiveFunctionParser("R<One, S<Mul, U(1), U(3)>>").parse());
+        parseAndRegisterFunction("Mul", "R<Z, S<Add, U(1), U(3)>>");
+        if (NATIVE_OPERATIONS) {
+            registerFunction("Mul", new AbstractRecursiveFunction() {
+                @Override
+                public int execute(int... args) {
+                    long a = args[0];
+                    long b = args[1];
+                    if (a * b > Integer.MAX_VALUE) {
+                        throw new IllegalArgumentException("Integer overflow!");
+                    }
+                    return args[0] * args[1];
+                }
+            });
+        }
+        parseAndRegisterFunction("Pow", "R<One, S<Mul, U(1), U(3)>>");
 
-        parsers.put("Equal0", new RecursiveFunctionParser("R<One, Z>").parse());
-        parsers.put("EqualLess", new RecursiveFunctionParser("S<Equal0, Sub>").parse());
-        parsers.put("Equal", new RecursiveFunctionParser("S<Mul, S<EqualLess, U(1), U(2)>, S<EqualLess, U(2), U(1)>>").parse());
+        parseAndRegisterFunction("Equal0", "R<One, Z>");
+        if (NATIVE_OPERATIONS) {
+            registerFunction("Equal0", new AbstractRecursiveFunction() {
+                @Override
+                public int execute(int... args) {
+                    if (args[0] == 0) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                }
+            });
+        }
+        parseAndRegisterFunction("EqualLess", "S<Equal0, Sub>");
+        parseAndRegisterFunction("Equal", "S<Mul, S<EqualLess, U(1), U(2)>, S<EqualLess, U(2), U(1)>>");
 
         // MaxDivisor(limit, b) = max a such that (a <= limit) and (a % b == 0)
-        parsers.put("MaxDivisor", new RecursiveFunctionParser("S<R<Z, S<If, S<Equal, S<Sub, S<N, U(2)>, U(3)>, U(1)>, S<N, U(2)>, U(3)>>, U(2), U(1)>").parse());
+        parseAndRegisterFunction("MaxDivisor", "S<R<Z, S<If, S<Equal, S<Sub, S<N, U(2)>, U(3)>, U(1)>, S<N, U(2)>, U(3)>>, U(2), U(1)>");
         // Div(a, b) = a // b
-        parsers.put("Div", new RecursiveFunctionParser("S<R<Z, S<Add, U(3), S<Equal, S<MaxDivisor, S<N, U(2)>, U(1)>, S<N, U(2)>>>>, U(2), U(1)>").parse());
+        parseAndRegisterFunction("Div", "S<R<Z, S<Add, U(3), S<Equal, S<MaxDivisor, S<N, U(2)>, U(1)>, S<N, U(2)>>>>, U(2), U(1)>");
+        if (NATIVE_OPERATIONS) {
+            registerFunction("Div", new AbstractRecursiveFunction() {
+                @Override
+                public int execute(int... args) {
+                    if (args[1] == 0) {
+                        return 0;
+                    }
+                    return args[0] / args[1];
+                }
+            });
+        }
 
         // Mod(a, m) = a % m
-        parsers.put("Mod", new RecursiveFunctionParser("S<Sub, U(1), S<Mul, Div, U(2)>>").parse());
+        parseAndRegisterFunction("Mod", "S<Sub, U(1), S<Mul, Div, U(2)>>");
+        if (NATIVE_OPERATIONS) {
+            registerFunction("Mod", new AbstractRecursiveFunction() {
+                @Override
+                public int execute(int... args) {
+                    if (args[1] == 0) {
+                        return args[0];
+                    }
+                    return args[0] % args[1];
+                }
+            });
+        }
 
         // IsPrime(p) = 1 if p is prime else 0
-        parsers.put("IsPrime", new RecursiveFunctionParser("S<Not, S<Sub, S<R<Z, S<Add, U(3), S<Equal0, S<Mod, U(1), U(2)>>>>, U(1), U(1)>, One>>").parse());
+        parseAndRegisterFunction("IsPrime", "S<Not, S<Sub, S<R<Z, S<Add, U(3), S<Equal0, S<Mod, U(1), U(2)>>>>, U(1), U(1)>, One>>");
 
-        parsers.put("NextPrime", new RecursiveFunctionParser("S<Add, M<S<Not, S<IsPrime, S<Add, S<N, U(1)>, U(2)>>>>, S<N, U(1)>>").parse());
+        parseAndRegisterFunction("NextPrime", "S<Add, M<S<Not, S<IsPrime, S<Add, S<N, U(1)>, U(2)>>>>, S<N, U(1)>>");
         // nthPrime(n) = (n-1)-th prime, nthPrime(0) = 2
-        parsers.put("NthPrime", new RecursiveFunctionParser("R<S<N, S<N, Z>>, S<NextPrime, U(2)>>").parse());
+        parseAndRegisterFunction("NthPrime", "R<S<N, S<N, Z>>, S<NextPrime, U(2)>>");
         // plog(p, x) = max (r >= 0) such that (x % (p^r) == 0), plog(3, 12) = 2, plog(5, 7) = 0
-        parsers.put("PLog", new RecursiveFunctionParser("S<Dec, M<S<Equal0, S<Mod, U(2), S<Pow, U(1), U(3)>>>> >").parse());
+        parseAndRegisterFunction("PLog", "S<Dec, M<S<Equal0, S<Mod, U(2), S<Pow, U(1), U(3)>>>> >");
+
+        for (String[] s: new String[][]{
+                {"Two", "S<N, One>"},
+                {"Two2", "S<Two, U(1)>"},
+                {"StackSize", "S<Dec, S<PLog, Two, U(1)>>"},
+                {"PushWithoutChangeStack", "S<Mul, U(1), S<Pow, S<NthPrime, S<N, S<StackSize, U(1)>>>, S<N, U(2)>>>"},
+                {"Push", "S<Mul, Two2, PushWithoutChangeStack>"},
+                {"Push2", "S<Push, S<Push, U(1), U(2)>, U(3)>"},
+                {"Push3", "S<Push, S<Push, S<Push, U(1), U(2)>, U(3)>, U(4)>"},
+                {"Top", "S<Dec, S<PLog, S<NthPrime, StackSize>, U(1)>>"},
+                {"Top2", "S<Dec, S<PLog, S<NthPrime, S<Dec, StackSize>>, U(1)>>"},
+                {"Pop", "S<Div, S<Div, U(1), S<Pow, S<NthPrime,  StackSize>, S<N, Top>>>, Two>"},
+                {"Pop2", "S<Pop, S<Pop, U(1)>>"},
+                {"First", "S<Push, Pop2, S<N, Top>>"},
+                {"Second", "S<Push2, Pop2, S<Dec, Top2>, One>"},
+                {"Third", "S<Push3, Pop2, S<Dec, Top2>, Top2, S<Dec, Top>>"},
+                {"Other", "S<If, S<Equal, Top, Z>, Second, Third>"},
+                {"AckermannStep", "S<If, S<Equal, Top2, Z>, First, Other>"},
+                {"Init", "S<Push2, Two, U(1), U(2)>"},
+                {"AckermannKSteps", "R<Init, S<AckermannStep, U(4)>>"},
+                {"StackSizeKSteps", "S<StackSize, S<AckermannKSteps, U(1), U(2), U(3)>>"},
+                {"NumberOfSteps", "M<S<Sub, S<StackSizeKSteps, U(1), U(2), U(3)>, One>>"},
+                {"Ackermann", "S<Top, S<AckermannKSteps, U(1), U(2), S<NumberOfSteps, U(1), U(2)>>>"}
+        }) {
+            String name = s[0];
+            String value = s[1];
+            parseAndRegisterFunction(name, value);
+        }
     }
 
     private final String input;

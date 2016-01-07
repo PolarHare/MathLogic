@@ -78,21 +78,27 @@ public class RecursiveFunctionParserTest {
     @Test
     public void testParsingDivisionPredefined() throws Exception {
         AbstractRecursiveFunction foo = new RecursiveFunctionParser("Div").parse();
-        assertEquals(foo.execute(1, 2), 0);
-        assertEquals(foo.execute(2, 2), 1);
-        assertEquals(foo.execute(3, 2), 1);
-        assertEquals(foo.execute(4, 2), 2);
-        assertEquals(foo.execute(11, 3), 3);
+        for (int i = 0; i < 1000; i++) {
+            assertEquals(foo.execute(1, 0), 0);
+            assertEquals(foo.execute(1, 2), 0);
+            assertEquals(foo.execute(2, 2), 1);
+            assertEquals(foo.execute(3, 2), 1);
+            assertEquals(foo.execute(4, 2), 2);
+            assertEquals(foo.execute(11, 3), 3);
+        }
     }
 
     @Test
     public void testParsingModPredefined() throws Exception {
         AbstractRecursiveFunction foo = new RecursiveFunctionParser("Mod").parse();
-        assertEquals(foo.execute(1, 2), 1);
-        assertEquals(foo.execute(2, 2), 0);
-        assertEquals(foo.execute(3, 2), 1);
-        assertEquals(foo.execute(4, 2), 0);
-        assertEquals(foo.execute(11, 3), 2);
+        for (int i = 0; i < 1000; i++) {
+            assertEquals(foo.execute(5, 0), 5);
+            assertEquals(foo.execute(1, 2), 1);
+            assertEquals(foo.execute(2, 2), 0);
+            assertEquals(foo.execute(3, 2), 1);
+            assertEquals(foo.execute(4, 2), 0);
+            assertEquals(foo.execute(11, 3), 2);
+        }
     }
 
     @Test
@@ -124,5 +130,22 @@ public class RecursiveFunctionParserTest {
         assertEquals(foo.execute(3, 12), 1);
         assertEquals(foo.execute(3, 36), 2);
         assertEquals(foo.execute(5, 7), 0);
+    }
+
+    @Test
+    public void testAckermann() throws Exception {
+        AbstractRecursiveFunction foo = new RecursiveFunctionParser("Ackermann").parse();
+        int[][] res = new int[][]{
+                {1, 2, 3},
+                {2, 3, 5},
+                {3, 4, 7},
+        };
+        for (int n = 0; n < 3; n++) {
+            for (int m = 0; m < 3; m++) {
+                String test = "Ackermann(" + m + ", " + n + ")=" + res[n][m];
+                assertEquals(foo.execute(m, n), res[n][m], test);
+                System.out.println(test + " - ok!");
+            }
+        }
     }
 }
