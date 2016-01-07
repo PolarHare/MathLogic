@@ -73,6 +73,20 @@ public class RecursiveFunctionParser {
         return token;
     }
 
+    private void skipExpectedToken(String expected) {
+        String token = this.tokenizer.nextToken();
+        if (!token.equals(expected)) {
+            throw new IllegalArgumentException("Found token: '" + token + "', while expected: '" + expected + "'.");
+        }
+    }
+
+    private void skipNextNonEmptyToken(String expected) {
+        String token = this.nextNonEmptyToken();
+        if (!token.equals(expected)) {
+            throw new IllegalArgumentException("Found token: '" + token + "', while expected: '" + expected + "'.");
+        }
+    }
+
     private AbstractRecursiveFunction parseFunction() {
         String token = this.nextNonEmptyToken();
         if (token.equals("Z")) {
@@ -80,9 +94,9 @@ public class RecursiveFunctionParser {
         } else if (token.equals("N")) {
             return new Next();
         } else if (token.equals("U")) {
-            assert this.tokenizer.nextToken().equals("(");
+            this.skipExpectedToken("(");
             int index = Integer.parseInt(this.tokenizer.nextToken());
-            assert this.tokenizer.nextToken().equals(")");
+            this.skipExpectedToken(")");
 
             return new UProjection(index - 1);
         } else if (token.equals("S")) {
@@ -105,7 +119,7 @@ public class RecursiveFunctionParser {
     }
 
     private AbstractRecursiveFunction[] parseTemplateFunctions() {
-        assert this.nextNonEmptyToken().equals("<");
+        this.skipNextNonEmptyToken("<");
         List<AbstractRecursiveFunction> fs = new ArrayList<AbstractRecursiveFunction>();
         while(true) {
             fs.add(parseFunction());
