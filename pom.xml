@@ -13,6 +13,7 @@
         <module>AssumptionConverter</module>
         <module>Proofer</module>
         <module>RecursiveFunctions</module>
+        <module>AssumptionConverterWithQuantifiers</module>
     </modules>
 
     <dependencies>
