@@ -1,5 +1,6 @@
 package com.polarnick.mathlogic.assumptionCheckerAndConverter.entities;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -11,9 +12,15 @@ import java.util.Map;
 public class Variable extends Expression {
 
     public final String name;
+    public final List<Variable> variables;
+
+    public Variable(String name, List<Variable> variables) {
+        this.name = name;
+        this.variables = variables;
+    }
 
     public Variable(String name) {
-        this.name = name;
+        this(name, new ArrayList<>(0));
     }
 
     public String getName() {
@@ -36,7 +43,16 @@ public class Variable extends Expression {
 
         Variable variable = (Variable) o;
 
-        return name.equals(variable.name);
+        if (!name.equals(variable.name) || variables.size() != variable.variables.size()) {
+            return false;
+        }
+        for (int i = 0; i < variables.size(); i++) {
+            if (!variables.get(i).equals(variable.variables.get(i))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
@@ -61,20 +77,4 @@ public class Variable extends Expression {
         return name.equals(variable.getName());
     }
 
-    @Override
-    public boolean evaluate(Map<String, Boolean> values) {
-        return values.get(name);
-    }
-
-    @Override
-    public void replace(Map<String, Expression> expForNamedAnyExpression) {
-    }
-
-    @Override
-    public void addSteps(Map<String, Boolean> varValues, List<Expression> steps) {
-        steps.add(evaluate(varValues) ?
-                this :
-                new Negation(this)
-        );
-    }
 }

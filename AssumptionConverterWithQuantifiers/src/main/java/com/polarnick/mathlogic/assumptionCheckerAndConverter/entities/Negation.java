@@ -35,40 +35,4 @@ public class Negation extends Expression {
         return expression.getClass() == Negation.class && this.expression.compareToExpression(((Negation) expression).expression);
     }
 
-    @Override
-    public boolean evaluate(Map<String, Boolean> values) {
-        return !expression.evaluate(values);
-    }
-
-    @Override
-    public void replace(Map<String, Expression> expForNamedAnyExpression) {
-        if (expression.getClass() == NamedAnyExpression.class) {
-            NamedAnyExpression named = (NamedAnyExpression) expression;
-            expression = expForNamedAnyExpression.get(named.name);
-        } else {
-            expression.replace(expForNamedAnyExpression);
-        }
-    }
-
-    final static String[] TRUE = new String[]{
-            "A->!A->A",
-            "!A->A",
-            "!A->!A->!A",
-            "(!A->!A->!A)->(!A->(!A->!A)->!A)->!A->!A",
-            "(!A->(!A->!A)->!A)->!A->!A",
-            "!A->(!A->!A)->!A",
-            "!A->!A",
-            "(!A->A)->(!A->!A)->!!A",
-            "(!A->!A)->!!A",
-            "!!A"
-    };
-
-    final static String[] FALSE = new String[]{
-    };
-
-    @Override
-    public void addSteps(Map<String, Boolean> varValues, List<Expression> steps) {
-        expression.addSteps(varValues, steps);
-        Expression.addSteps(expression.evaluate(varValues) ? TRUE : FALSE, expression, null, steps);
-    }
 }

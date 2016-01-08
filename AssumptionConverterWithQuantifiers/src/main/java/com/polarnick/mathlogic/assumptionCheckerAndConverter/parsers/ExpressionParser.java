@@ -3,19 +3,21 @@ package com.polarnick.mathlogic.assumptionCheckerAndConverter.parsers;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.polarnick.mathlogic.assumptionCheckerAndConverter.entities.*;
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.entities.Exists;
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.entities.ForAll;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /*
  * ⟨выражение⟩ ::= ⟨дизъюнкция⟩ | ⟨дизъюнкция⟩ ‘->’ ⟨выражение⟩
  * ⟨дизъюнкция⟩ ::= ⟨конъюнкция⟩ | ⟨дизъюнкция⟩ ‘|’ ⟨конъюнкция⟩
- * ⟨конъюнкция⟩ ::= ⟨отрицание⟩ | ⟨конъюнкция⟩ ‘&’ ⟨отрицание⟩
- * ⟨отрицание⟩ ::= (‘A’ : : : ‘Z’) {‘0’ : : : ‘9’}∗ | ‘!’ ⟨отрицание⟩ | ‘(’ ⟨выражение⟩ ‘)’
+ * ⟨конъюнкция⟩ ::= ⟨унарное⟩ | ⟨конъюнкция⟩ ‘&’ ⟨унарное⟩
+ * ⟨унарное⟩ ::= ⟨предикат⟩ | ‘!’ ⟨унарное⟩ | ‘(’ ⟨выражение⟩ ‘)’ | (‘@’ | ‘?’) ⟨переменная⟩ ⟨унарное⟩
+ * ⟨переменная⟩ ::= (‘a’...‘z’) {‘0’...‘9’}*
+ * ⟨предикат⟩ ::= (‘A’...‘Z’) {‘0’...‘9’}* [‘(’ ⟨терм⟩ {‘,’⟨терм⟩}* ‘)’]
+ * ⟨терм⟩ ::= (‘a’...‘z’) {‘0’...‘9’}* ‘(’ ⟨терм⟩ {‘,’⟨терм⟩}* ‘)’ | ⟨переменная⟩ | ‘(’ ⟨терм⟩ ‘)’
  */
 
 /**
@@ -24,6 +26,9 @@ import java.util.regex.Pattern;
  * @author Nickolay Polyarniy aka PolarNick
  */
 public class ExpressionParser {
+
+    private static final String VARIABLE_REGEXP = "[a-z][0-9]*";
+    private static final String PREDICATE_REGEXP = "[A-Z][0-9]*";
 
     public List<String> getAllVariables(String line) {
         Set<String> matches = new HashSet<String>();
@@ -104,7 +109,7 @@ public class ExpressionParser {
         return parseConjunction(source, from, to);
     }
 
-    // ⟨конъюнкция⟩ ::= ⟨отрицание⟩ | ⟨конъюнкция⟩ ‘&’ ⟨отрицание⟩
+    // ⟨конъюнкция⟩ ::= ⟨унарное⟩ | ⟨конъюнкция⟩ ‘&’ ⟨унарное⟩
     private Expression parseConjunction(StringWithBrackets source, int from, int to) {
         for (int i = to - 1; i >= from; i--) {
             if (source.charAt(i) == ')') {
@@ -112,27 +117,99 @@ public class ExpressionParser {
                 continue;
             }
             if (source.charAt(i) == '&') {
-                return new Conjunction(parseConjunction(source, from, i), parseNegation(source, i + 1, to));
+                return new Conjunction(parseConjunction(source, from, i), parseUnary(source, i + 1, to));
             }
         }
-        return parseNegation(source, from, to);
+        return parseUnary(source, from, to);
     }
 
-    // ⟨отрицание⟩ ::= (‘A’ : : : ‘Z’) {‘0’ : : : ‘9’}∗ | ‘!’ ⟨отрицание⟩ | ‘(’ ⟨выражение⟩ ‘)’
-    private Expression parseNegation(StringWithBrackets source, int from, int to) {
+    // ⟨унарное⟩ ::= ⟨предикат⟩ | ‘!’ ⟨унарное⟩ | ‘(’ ⟨выражение⟩ ‘)’ | (‘@’ | ‘?’) ⟨переменная⟩ ⟨унарное⟩
+    private Expression parseUnary(StringWithBrackets source, int from, int to) {
         if (source.charAt(from) == '!') {
-            return new Negation(parseNegation(source, from + 1, to));
+            return new Negation(parseUnary(source, from + 1, to));
         } else if (source.charAt(from) == '(') {
             Preconditions.checkState(source.getClosingBracket(from) == to - 1);
             return parseExpression(source, from + 1, to - 1);
+        } else if (source.charAt(from) == '@' || source.charAt(from) == '?') {
+            int variableLength = getMaxPrefixLength(source.string.substring(from + 1, to), VARIABLE_REGEXP);
+            Variable variable = parseVariable(source, from + 1, from + 1 + variableLength);
+            Expression unary = parseUnary(source, from + 1 + variableLength, to);
+
+            if (source.charAt(from) == '@') {
+                return new ForAll(variable, unary);
+            } else {
+                assert(source.charAt(from) == '?');
+                return new Exists(variable, unary);
+            }
         } else {
-            return createNamed(source.string.substring(from, to));
+            return parsePredicate(source, from, to);
         }
+    }
+
+    // ⟨переменная⟩ ::= (‘a’...‘z’) {‘0’...‘9’}*
+    private Variable parseVariable(StringWithBrackets source, int from, int to) {
+        String name = source.string.substring(from, to);
+        Preconditions.checkState(name.matches(VARIABLE_REGEXP), "Incorrect variable name: " + name);
+        return new Variable(name);
+    }
+
+    // ⟨предикат⟩ ::= (‘A’...‘Z’) {‘0’...‘9’}* [‘(’ ⟨терм⟩ {‘,’⟨терм⟩}* ‘)’]
+    private Expression parsePredicate(StringWithBrackets source, int from, int to) {
+        int predicateLength = getMaxPrefixLength(source.string.substring(from, to), PREDICATE_REGEXP);
+        String predicateName = source.string.substring(from, from + predicateLength);
+        List<Variable> terms = parseTerms(source, from + predicateLength, to);
+        return new Variable(predicateName, terms);
+    }
+
+    // ⟨терм⟩ ::= (‘a’...‘z’) {‘0’...‘9’}* ‘(’ ⟨терм⟩ {‘,’⟨терм⟩}* ‘)’ | ⟨переменная⟩ | ‘(’ ⟨терм⟩ ‘)’
+    private Variable parseTerm(StringWithBrackets source, int from, int to) {
+        if (source.charAt(from) == '(') {
+            Preconditions.checkState(source.getClosingBracket(from) == to - 1);
+            return parseTerm(source, from + 1, to - 1);
+        } else {
+            int variableLength = getMaxPrefixLength(source.string.substring(from, to), VARIABLE_REGEXP);
+            Preconditions.checkState(variableLength > 0);
+            String variableName = source.string.substring(from, from + variableLength);
+            List<Variable> terms = parseTerms(source, from + variableLength, to);
+            return new Variable(variableName, terms);
+        }
+    }
+
+    // ‘(’ ⟨терм⟩ {‘,’⟨терм⟩}* ‘)’
+    private List<Variable> parseTerms(StringWithBrackets source, int from, int to) {
+        List<Variable> terms = new ArrayList<>();
+        if (from != to) {
+            Preconditions.checkState(source.charAt(from) == '(');
+            Preconditions.checkState(source.charAt(to - 1) == ')');
+            Preconditions.checkState(source.getClosingBracket(from) == to - 1);
+            int termFrom = from + 1;
+            for (int i = from + 1; i < to - 1; i++) {
+                if (source.charAt(i) == '(') {
+                    i = source.getClosingBracket(i);
+                    continue;
+                }
+                if (source.charAt(i) == ',') {
+                    terms.add(parseTerm(source, termFrom, i));
+                    termFrom = i + 1;
+                }
+            }
+            terms.add(parseTerm(source, termFrom, to - 1));
+        }
+        return terms;
     }
 
     protected Expression createNamed(String name) {
         Preconditions.checkState(name.matches("[A-Z][0-9]*"), "Incorrect variable name: " + name);
         return new Variable(name);
+    }
+
+    public static int getMaxPrefixLength(String string, String regexp) {
+        Matcher m = Pattern.compile(regexp).matcher(string);
+        if (!m.find() || m.start() != 0) {
+            return -1;
+        } else {
+            return m.end();
+        }
     }
 
 }

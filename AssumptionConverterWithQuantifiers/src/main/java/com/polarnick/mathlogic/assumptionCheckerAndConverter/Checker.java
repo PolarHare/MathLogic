@@ -1,9 +1,9 @@
 package com.polarnick.mathlogic.assumptionCheckerAndConverter;
 
-import com.polarnick.mathlogic.proofChecker.entities.Consecution;
-import com.polarnick.mathlogic.proofChecker.entities.Expression;
-import com.polarnick.mathlogic.proofChecker.parsers.ExpressionParser;
-import com.polarnick.mathlogic.proofChecker.parsers.ExpressionPatternParser;
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.entities.Consecution;
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.entities.Expression;
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.parsers.ExpressionParser;
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.parsers.ExpressionPatternParser;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
