@@ -25,7 +25,7 @@ public class ExpressionParserTest {
             java.net.URL url = ExpressionParserTest.class.getResource(filepath);
             java.nio.file.Path resPath = java.nio.file.Paths.get(url.toURI());
             String text = new String(java.nio.file.Files.readAllBytes(resPath), "UTF8");
-            String[] lines = text.split("\r\n");
+            String[] lines = text.split("\n");
             for (int i = 1; i < lines.length; i++) {
                 parser.parseExpression(lines[i]);
             }
