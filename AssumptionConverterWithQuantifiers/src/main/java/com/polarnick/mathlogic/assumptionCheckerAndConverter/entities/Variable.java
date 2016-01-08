@@ -1,5 +1,7 @@
 package com.polarnick.mathlogic.assumptionCheckerAndConverter.entities;
 
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.utils.Pair;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +31,15 @@ public class Variable extends Expression {
 
     @Override
     public String toString() {
-        return name;
+        StringBuilder s = new StringBuilder(name);
+        if (variables.size() > 0) {
+            s.append("(");
+            for (Variable var : variables) {
+                s.append(var.toString());
+            }
+            s.append(")");
+        }
+        return s.toString();
     }
 
     @Override
@@ -69,12 +79,42 @@ public class Variable extends Expression {
     }
 
     @Override
-    public boolean compareToExpression(Expression expression) {
-        if (expression.getClass() != getClass()) {
-            return false;
+    public List<Pair<Expression, Expression>> diffToExpression(Expression expression) {
+        List<Pair<Expression, Expression>> diff = new ArrayList<>(0);
+        if (this == expression) {
+            return diff;
         }
-        Variable variable = (Variable) expression;
-        return name.equals(variable.getName());
+        if (!this.toString().equals(expression.toString())) {
+            diff.add(new Pair<>(this, expression));
+        }
+        return diff;
+    }
+
+    public List<Variable> getFreeVariables(List<Variable> busyVariables) {
+        ArrayList<Variable> vars = new ArrayList<>();
+        for (Variable v : this.getAllVariables()) {
+            if (!busyVariables.contains(v)) {
+                vars.add(v);
+            }
+        }
+        return vars;
+    }
+
+    public List<Variable> getBusyVariables() {
+        return new ArrayList<>();
+    }
+
+    public List<Variable> getAllVariables() {
+        ArrayList<Variable> vars = new ArrayList<>();
+        if (variables.size() == 0) {
+            vars.add(this);
+            return vars;
+        } else {
+            for (Variable v : variables) {
+                vars.addAll(v.getAllVariables());
+            }
+            return vars;
+        }
     }
 
 }

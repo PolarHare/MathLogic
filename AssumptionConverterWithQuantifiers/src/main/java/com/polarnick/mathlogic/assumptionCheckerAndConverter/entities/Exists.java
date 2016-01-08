@@ -1,5 +1,10 @@
 package com.polarnick.mathlogic.assumptionCheckerAndConverter.entities;
 
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.exceptions.LineNumberException;
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.utils.Pair;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -9,17 +14,20 @@ import java.util.Map;
  */
 public class Exists extends Expression {
 
-    private final Variable variable;
-    private final Expression expression;
+    public final Variable variable;
+    public final Expression expression;
 
     public Exists(Variable variable, Expression expression) {
         this.variable = variable;
         this.expression = expression;
+        if (expression.getBusyVariables().contains(variable)) {
+            throw new LineNumberException(0);
+        }
     }
 
     @Override
     public String toString() {
-        return "?" + expression;
+        return "?" + variable + expression;
     }
 
     @Override
@@ -33,9 +41,47 @@ public class Exists extends Expression {
     }
 
     @Override
-    public boolean compareToExpression(Expression expression) {
-        return expression.getClass() == Exists.class
-                && this.expression.compareToExpression(((Exists) expression).expression)
-                && this.variable.compareToExpression(((Exists) expression).variable);
+    public List<Pair<Expression, Expression>> diffToExpression(Expression expression) {
+        List<Pair<Expression, Expression>> diff = new ArrayList<>(0);
+        if (this == expression) {
+            return diff;
+        }
+        if (getClass() == expression.getClass()) {
+            Exists exists = (Exists) expression;
+            diff.addAll(variable.diffToExpression(exists.variable));
+            diff.addAll(this.expression.diffToExpression(exists.expression));
+        } else {
+            diff.add(new Pair<>(this, expression));
+        }
+        return diff;
+    }
+
+    @Override
+    public List<Variable> getFreeVariables(List<Variable> busyVariables) {
+        ArrayList<Variable> vars = new ArrayList<>();
+        boolean isBusy = busyVariables.contains(variable);
+        if (!isBusy) {
+            busyVariables.add(variable);
+        }
+        vars.addAll(expression.getFreeVariables(busyVariables));
+        if (!isBusy) {
+            busyVariables.remove(variable);
+        }
+        return vars;
+    }
+
+    @Override
+    public List<Variable> getBusyVariables() {
+        ArrayList<Variable> vars = new ArrayList<Variable>();
+        vars.add(variable);
+        return vars;
+    }
+
+    @Override
+    public List<Variable> getAllVariables() {
+        List<Variable> vars = new ArrayList<>();
+        vars.add(variable);
+        vars.addAll(expression.getAllVariables());
+        return vars;
     }
 }

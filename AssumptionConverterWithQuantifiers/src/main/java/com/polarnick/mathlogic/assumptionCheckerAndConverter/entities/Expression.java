@@ -1,5 +1,8 @@
 package com.polarnick.mathlogic.assumptionCheckerAndConverter.entities;
 
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.utils.Pair;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,5 +28,20 @@ public abstract class Expression {
         return false;
     }
 
-    public abstract boolean compareToExpression(Expression expression);
+    public boolean compareToExpression(Expression expression) {
+        return diffToExpression(expression).size() == 0;
+    }
+
+    public abstract List<Pair<Expression, Expression>> diffToExpression(Expression expression);
+
+    public abstract List<Variable> getFreeVariables(List<Variable> busyVariables);
+
+    public List<Variable> getFreeVariables() {
+        return getFreeVariables(new ArrayList<>());
+    }
+
+    public abstract List<Variable> getBusyVariables();
+
+    public abstract List<Variable> getAllVariables();
+
 }

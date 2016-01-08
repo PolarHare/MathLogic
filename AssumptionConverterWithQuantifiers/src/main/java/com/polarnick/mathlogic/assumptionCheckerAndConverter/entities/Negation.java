@@ -1,5 +1,8 @@
 package com.polarnick.mathlogic.assumptionCheckerAndConverter.entities;
 
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.utils.Pair;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,8 +34,30 @@ public class Negation extends Expression {
     }
 
     @Override
-    public boolean compareToExpression(Expression expression) {
-        return expression.getClass() == Negation.class && this.expression.compareToExpression(((Negation) expression).expression);
+    public List<Pair<Expression, Expression>> diffToExpression(Expression expression) {
+        List<Pair<Expression, Expression>> diff = new ArrayList<>(0);
+        if (this == expression) {
+            return diff;
+        }
+        if (getClass() == expression.getClass()) {
+            Negation negation = (Negation) expression;
+            diff.addAll(this.expression.diffToExpression(negation.expression));
+        } else {
+            diff.add(new Pair<>(this, expression));
+        }
+        return diff;
+    }
+
+    public List<Variable> getFreeVariables(List<Variable> busyVariables) {
+        return expression.getFreeVariables(busyVariables);
+    }
+
+    public List<Variable> getBusyVariables() {
+        return expression.getBusyVariables();
+    }
+
+    public List<Variable> getAllVariables() {
+        return expression.getAllVariables();
     }
 
 }

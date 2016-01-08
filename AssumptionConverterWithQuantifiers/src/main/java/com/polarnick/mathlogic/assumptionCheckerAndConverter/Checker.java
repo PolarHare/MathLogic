@@ -1,17 +1,20 @@
 package com.polarnick.mathlogic.assumptionCheckerAndConverter;
 
-import com.polarnick.mathlogic.assumptionCheckerAndConverter.entities.Consecution;
-import com.polarnick.mathlogic.assumptionCheckerAndConverter.entities.Expression;
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.entities.*;
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.exceptions.FreeAxiomUsageException;
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.exceptions.LineNumberException;
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.exceptions.NonFreeTermException;
 import com.polarnick.mathlogic.assumptionCheckerAndConverter.parsers.ExpressionParser;
 import com.polarnick.mathlogic.assumptionCheckerAndConverter.parsers.ExpressionPatternParser;
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.utils.Pair;
+import org.testng.collections.Lists;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Date: 10.01.14 at 20:48
@@ -35,10 +38,37 @@ public class Checker {
             "(A->B)->(A->!B)->!A",
             "!!A->A"
     };
+    private static final String axiom11 = "@x(A)->B";  // ∀x(ψ) → (ψ[x := θ])
+    private static final String axiom12 = "B->?x(A)";  // (ψ[x := θ]) → ∃x(ψ)
+    private static Consecution axiom11Exp;
+    private static Consecution axiom12Exp;
+
+    private List<Expression> loadExpressions(String name) {
+        String filepath = "/com/polarnick/mathlogic/assumptionCheckerAndConverter/" + name;
+        java.net.URL url = Checker.class.getResource(filepath);
+        java.nio.file.Path resPath = null;
+        try {
+            resPath = java.nio.file.Paths.get(url.toURI());
+            String text = new String(java.nio.file.Files.readAllBytes(resPath), "UTF8");
+            ExpressionParser parser = new ExpressionParser();
+            List<Expression> expressions = new ArrayList<>();
+            for (String line : text.split("\n")) {
+                expressions.add(parser.parseExpression(line));
+            }
+            return expressions;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
 
     private final List<Expression> axioms;
     private final List<Expression> proofedExpressions;
     private final List<Expression> assumptions;
+    private Expression resAlpha = null;
+    private List<List<Variable>> assumptionsFreeVariables;
+    private final List<Expression> forAllInferences;
+    private final List<Expression> existsInferences;
 
     public Checker() {
         this.axioms = new ArrayList<Expression>(unparsedAxioms.length);
@@ -48,6 +78,10 @@ public class Checker {
         for (String axiom : unparsedAxioms) {
             axioms.add(parser.parseExpression(axiom));
         }
+        axiom11Exp = (Consecution) parser.parseExpression(axiom11);
+        axiom12Exp = (Consecution) parser.parseExpression(axiom12);
+        forAllInferences = loadExpressions("ExistsMP.in");
+        existsInferences = loadExpressions("ForAllMP.in");
     }
 
     private boolean isCorespondsToAxiom(Expression expression) {
@@ -56,7 +90,234 @@ public class Checker {
                 return true;
             }
         }
+        if (isCorrespondsToForAllAxiom11(expression) || isCorrespondsToExistsAxiom12(expression)) {
+            return true;
+        }
         return false;
+    }
+
+    private boolean isCorrespondsToForAllAxiom11(Expression expression) {
+        // ∀x(ψ) → (ψ[x := θ])
+        // @x(A)->B
+        // TODO: проверки на свободу подстановки
+        Map<String, Expression> patternValues = new HashMap<>();
+        if (!expression.compareToPattern(axiom11Exp, patternValues)) {
+            return false;
+        }
+        Variable x = (Variable) patternValues.get("x");
+        Expression a = patternValues.get("A");
+        Expression b = patternValues.get("B");
+        List<Pair<Expression, Expression>> diff = a.diffToExpression(b);
+
+        Expression xInB = null;
+        for (Pair<Expression, Expression> d : diff) {
+            if (d.first.compareToExpression(x)) {
+                if (xInB == null) {
+                    xInB = d.second;
+                } else if (!xInB.compareToExpression(d.second)) {
+                    return false;
+                }
+            }
+        }
+
+        checkSubstitution(x, a, xInB);
+        return true;
+    }
+
+    private boolean isCorrespondsToExistsAxiom12(Expression expression) {
+        // (ψ[x := θ]) → ∃x(ψ)
+        // B->?xA
+        Map<String, Expression> patternValues = new HashMap<>();
+        if (!expression.compareToPattern(axiom12Exp, patternValues)) {
+            return false;
+        }
+        Variable x = (Variable) patternValues.get("x");
+        Expression a = patternValues.get("A");
+        Expression b = patternValues.get("B");
+        Exists xa = (Exists) ((Consecution) expression).getRight();
+        List<Pair<Expression, Expression>> diff = a.diffToExpression(b);
+
+        Expression xInB = null;
+        for (Pair<Expression, Expression> d : diff) {
+            if (d.first.compareToExpression(x)) {
+                if (xInB == null) {
+                    xInB = d.second;
+                } else if (!xInB.compareToExpression(d.second)) {
+                    return false;
+                }
+            }
+        }
+
+        checkSubstitution(x, a, xInB);
+        return true;
+    }
+
+    private void checkSubstitution(Variable x, Expression a, Expression newX) {
+        if (newX != null && !x.equals(newX)) {
+            for (Variable v : newX.getAllVariables()) {
+                List<Variable> busyVariables = a.getBusyVariables();
+                busyVariables.add(x);
+                if (busyVariables.contains(v)) {
+                    throw new NonFreeTermException(a, x, newX);
+                }
+            }
+        }
+
+        for (int i = 0; i < assumptionsFreeVariables.size(); ++i) {
+            if (assumptionsFreeVariables.get(i).contains(x)) {
+                Expression assumption;
+                if (i == assumptions.size()) {
+                    assumption = resAlpha;
+                } else {
+                    assumption = assumptions.get(i);
+                }
+                throw new FreeAxiomUsageException(x, assumption);
+            }
+        }
+    }
+
+    private List<Expression> stepsForAllRule(Expression expression) {
+        if (expression instanceof Consecution) {
+            Consecution consecution = (Consecution) expression;
+            if (consecution.getRight() instanceof ForAll) {
+                ForAll forAll = (ForAll) consecution.getRight();
+                for (int j = proofedExpressions.size() - 1; j >= 0; --j) {
+                    if (proofedExpressions.get(j) instanceof Consecution) {
+                        Consecution inputConsecution = (Consecution) proofedExpressions.get(j);
+                        if (consecution.getLeft().compareToExpression(inputConsecution.getLeft()) &&
+                                forAll.expression.compareToExpression(inputConsecution.getRight())) {
+                            if (consecution.getLeft().getAllVariables().contains(forAll.variable)
+                                    && consecution.getLeft().getFreeVariables().contains(forAll.variable)) {
+                                throw new FreeAxiomUsageException(forAll.variable, consecution.getLeft());
+                            }
+                            for (int i = 0; i < assumptionsFreeVariables.size(); ++i) {
+                                if (assumptionsFreeVariables.get(i).contains(forAll.variable)) {
+                                    Expression e;
+                                    if (i < assumptions.size()) {
+                                        e = assumptions.get(i);
+                                    } else {
+                                        e =  this.resAlpha;
+                                    }
+                                    throw new FreeAxiomUsageException(forAll.variable, e);
+                                }
+                            }
+
+                            List<Expression> steps = new ArrayList<>(forAllInferences.size());
+                            for (Expression e : forAllInferences) {
+                                steps.add(substitude(e, resAlpha, forAll.expression, consecution.getLeft(), forAll.variable));
+                            }
+                            return steps;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private List<Expression> stepsExistsRule(Expression expression) {
+        if (expression instanceof Consecution) {
+            Consecution consecution = (Consecution) expression;
+            if (consecution.getLeft() instanceof Exists) {
+                Exists exists = (Exists) consecution.getLeft();
+                for (int j = proofedExpressions.size() - 1; j >= 0; --j) {
+                    if (proofedExpressions.get(j) instanceof Consecution) {
+                        Consecution inputConsecution = (Consecution) proofedExpressions.get(j);
+                        if (consecution.getRight().compareToExpression(inputConsecution.getRight()) &&
+                                exists.expression.compareToExpression(inputConsecution.getLeft())) {
+                            if (consecution.getRight().getAllVariables().contains(exists.variable)
+                                    && consecution.getRight().getFreeVariables().contains(exists.variable)) {
+                                throw new RuntimeException("Вывод некорректен начиная с формулы " + proofedExpressions.size() + ": "
+                                        + "переменная " + exists.variable.toString() + " входит свободно в формулу " +
+                                        consecution.getRight().toString());
+                            }
+                            for (int i = 0; i < assumptionsFreeVariables.size(); ++i) {
+                                if (assumptionsFreeVariables.get(i).contains(exists.variable)) {
+                                    Expression e;
+                                    if (i < assumptions.size()) {
+                                        e = assumptions.get(i);
+                                    } else {
+                                        e =  this.resAlpha;
+                                    }
+                                    throw new RuntimeException("Вывод некорректен начиная с формулы " + proofedExpressions.size() + ": " +
+                                            "используется правило с квантором по переменной " + exists.variable.toString() +
+                                            ", входящей свободно в допущение " + e.toString());
+                                }
+                            }
+
+                            List<Expression> steps = new ArrayList<>(existsInferences.size());
+                            for (Expression e : existsInferences) {
+                                steps.add(substitude(e, resAlpha, exists.expression, consecution.getRight(), exists.variable));
+                            }
+                            return steps;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static Expression substitude(Expression expression, Expression a, Expression b, Expression c, Variable v) {
+        if (expression instanceof Variable) {
+            if ("A".equals(expression.toString()))
+                return a;
+            if ("B".equals(expression.toString()))
+                return b;
+            if ("C".equals(expression.toString()))
+                return c;
+        }
+
+        if (expression instanceof Exists) {
+            Exists exists = (Exists) expression;
+            if ("A".equals(exists.variable.getName()))
+                return a;
+            if ("B".equals(exists.variable.getName()))
+                return b;
+            if ("C".equals(exists.variable.getName()))
+                return c;
+        } else if (expression instanceof ForAll) {
+            ForAll forAll = (ForAll) expression;
+            if ("A".equals(forAll.variable.getName()))
+                return a;
+            if ("B".equals(forAll.variable.getName()))
+                return b;
+            if ("C".equals(forAll.variable.getName()))
+                return c;
+        }
+
+
+        if (expression instanceof Conjunction) {
+            Conjunction conj = (Conjunction) expression;
+            return new Conjunction(substitude(conj.getLeft(), a, b, c, v), substitude(conj.getRight(), a, b, c, v));
+        }
+
+        if (expression instanceof Disjunction) {
+            Disjunction disj = (Disjunction) expression;
+            return new Disjunction(substitude(disj.getLeft(), a, b, c, v), substitude(disj.getRight(), a, b, c, v));
+        }
+
+        if (expression instanceof Consecution) {
+            Consecution cons = (Consecution) expression;
+            return new Consecution(substitude(cons.getLeft(), a, b, c, v), substitude(cons.getRight(), a, b, c, v));
+        }
+
+        if (expression instanceof Negation) {
+            Negation neg = (Negation) expression;
+            return new Negation(substitude(neg.expression, a, b, c, v));
+        }
+
+        if (expression instanceof Exists) {
+            Exists exists = (Exists) expression;
+            return new Exists(v, substitude(exists.expression, a, b, c, v));
+        }
+
+        if (expression instanceof ForAll) {
+            ForAll forAll = (ForAll) expression;
+            forAll = new ForAll(v, substitude(forAll.expression, a, b, c, v));
+            return forAll;
+        }
+        return null;
     }
 
     private boolean containsIn(List<Expression> expressions, Expression expression) {
@@ -110,7 +371,6 @@ public class Checker {
 
     public ProofWithAssumptions useDeductionConvertion(ProofWithAssumptions proof) {
         List<Expression> resAssumptions = new ArrayList<Expression>();
-        Expression resAlpha = null;
         Expression resToBeProofed = null;
         List<Expression> resSteps = new ArrayList<Expression>();
         for (Expression ass : proof.assumptions) {
@@ -120,15 +380,11 @@ public class Checker {
         for (int i = 0; i < assumptions.size() - 1; i++) {
             resAssumptions.add(assumptions.get(i));
         }
-        if (assumptions.size() >= 1) {
-            resAlpha = assumptions.get(assumptions.size() - 1);
-        }
+        resAlpha = proof.alphaAssum;
         resToBeProofed = new Consecution(proof.alphaAssum, proof.toBeProofed);
-        int firstIncorrectLine = -1;
-        int lineNumber = 0;
+        int lineNumber = 1;
         for (Expression expI : proof.steps) {
-            if (firstIncorrectLine == -1) {
-                proofedExpressions.add(expI);
+            try {
                 if (isCorespondsToAxiom(expI) || containsIn(assumptions, expI)) {
                     Expression alphaConsSigma = new Consecution(proof.alphaAssum, expI);
                     resSteps.add(expI);
@@ -150,49 +406,81 @@ public class Checker {
                     resSteps.add(lemma4);
                     resSteps.add(lemma5);
                 } else {
-                    Expression expK = null;
-                    Expression expJ = null;
-                    for (Expression proofed : proofedExpressions) {
-                        if (proofed.getClass() == Consecution.class) {
-                            Consecution proofedConsecution = (Consecution) proofed;
-                            if (expI.compareToExpression(proofedConsecution.getRight())
-                                    && wasProofed(proofedConsecution.getLeft())) {
-                                expK = proofedConsecution;
-                                expJ = proofedConsecution.getLeft();
-                                break;
+                    List<Expression> steps = stepsForAllRule(expI);
+                    if (steps == null) {
+                        steps = stepsExistsRule(expI);
+                    }
+                    if (steps != null) {
+                        resSteps.addAll(steps);
+                    } else {
+                        Expression expK = null;
+                        Expression expJ = null;
+                        for (Expression proofed : proofedExpressions) {
+                            if (proofed.getClass() == Consecution.class) {
+                                Consecution proofedConsecution = (Consecution) proofed;
+                                if (expI.compareToExpression(proofedConsecution.getRight())
+                                        && wasProofed(proofedConsecution.getLeft())) {
+                                    expK = proofedConsecution;
+                                    expJ = proofedConsecution.getLeft();
+                                    break;
+                                }
                             }
                         }
-                    }
-                    if (expK == null || expJ == null) {
-                        firstIncorrectLine = lineNumber;
-                    } else {
-                        Expression res2 = new Consecution(new Consecution(proof.alphaAssum, new Consecution(expJ, expI)),
-                                new Consecution(proof.alphaAssum, expI));
-                        Expression res1 = new Consecution(new Consecution(proof.alphaAssum, expJ), res2);
-                        resSteps.add(res1);
-                        resSteps.add(res2);
-                        resSteps.add(new Consecution(proof.alphaAssum, expI));
+                        if (expK == null || expJ == null) {
+                            throw new LineNumberException(lineNumber);
+                        } else {
+                            Expression res2 = new Consecution(new Consecution(proof.alphaAssum, new Consecution(expJ, expI)),
+                                    new Consecution(proof.alphaAssum, expI));
+                            Expression res1 = new Consecution(new Consecution(proof.alphaAssum, expJ), res2);
+                            resSteps.add(res1);
+                            resSteps.add(res2);
+                            resSteps.add(new Consecution(proof.alphaAssum, expI));
+                        }
                     }
                 }
+                proofedExpressions.add(expI);
+            } catch (LineNumberException e) {
+                e.lineNumber = lineNumber;
+                throw e;
             }
             lineNumber++;
         }
-        if (firstIncorrectLine != -1) {
-            return null;
-        } else {
-            return new ProofWithAssumptions(resAssumptions, resAlpha, resToBeProofed, resSteps);
+        return new ProofWithAssumptions(resAssumptions, resAlpha, resToBeProofed, resSteps);
+    }
+
+    private static List<String> tokenizeFirstLine(String line) {
+        int brackets = 0;
+        int afterLastComma = 0;
+        List<String> res = new ArrayList<>();
+        for (int i = 0; i < line.length(); ++i) {
+            if (line.charAt(i) == '(') {
+                brackets += 1;
+            }
+            if (line.charAt(i) == ')') {
+                brackets += 1;
+            }
+            if (line.charAt(i) == ',' && brackets == 0) {
+                res.add(line.substring(afterLastComma, i));
+            }
         }
+        res.add(line.substring(afterLastComma, line.indexOf("|-")));
+        res.add(line.substring(line.indexOf("|-") + 2, line.length()));
+        return res;
     }
 
     public List<String> useDeductionConvertion(List<String> source) {
         ExpressionParser parser = new ExpressionParser();
-        String[] lineParts = source.get(0).split("(,|\\|-)");
+        List<String> lineParts = tokenizeFirstLine(source.get(0));
         List<Expression> exprAssums = new ArrayList<Expression>();
-        for (int i = 0; i < lineParts.length - 2; i++) {
-            exprAssums.add(parser.parseExpression(lineParts[i]));
+        assumptionsFreeVariables = new ArrayList<>(lineParts.size() - 1);
+        for (int i = 0; i < lineParts.size() - 2; i++) {
+            Expression expr = parser.parseExpression(lineParts.get(i));
+            assumptionsFreeVariables.add(expr.getFreeVariables());
+            exprAssums.add(expr);
         }
-        Expression alphaAssum = parser.parseExpression(lineParts[lineParts.length - 2]);
-        Expression toBeProofed = parser.parseExpression(lineParts[lineParts.length - 1]);
+        Expression alphaAssum = parser.parseExpression(lineParts.get(lineParts.size() - 2));
+        assumptionsFreeVariables.add(alphaAssum.getFreeVariables());
+        Expression toBeProofed = parser.parseExpression(lineParts.get(lineParts.size() - 1));
         List<Expression> steps = new ArrayList<Expression>();
         for (int i = 1; i < source.size(); i++) {
             steps.add(parser.parseExpression(source.get(i)));

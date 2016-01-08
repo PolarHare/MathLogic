@@ -9,9 +9,6 @@ public class Consecution extends BinaryExpression {
 
     public Consecution(Expression left, Expression right) {
         super(left, right);
-        if (toString().equals("(!B->((A->B)->((A->B)->(!B->(A->B)))))")) {
-            int x = 239;
-        }
     }
 
     @Override

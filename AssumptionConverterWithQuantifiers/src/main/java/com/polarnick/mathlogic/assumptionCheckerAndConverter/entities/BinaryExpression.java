@@ -1,5 +1,8 @@
 package com.polarnick.mathlogic.assumptionCheckerAndConverter.entities;
 
+import com.polarnick.mathlogic.assumptionCheckerAndConverter.utils.Pair;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -48,16 +51,40 @@ public abstract class BinaryExpression extends Expression {
     }
 
     @Override
-    public boolean compareToExpression(Expression expression) {
+    public List<Pair<Expression, Expression>> diffToExpression(Expression expression) {
+        List<Pair<Expression, Expression>> diff = new ArrayList<>(0);
         if (this == expression) {
-            return true;
+            return diff;
         }
-        if (getClass() == expression.getClass()) {
+        if (getClass() == expression.getClass() && getOperator().equals(((BinaryExpression) expression).getOperator())) {
             BinaryExpression binExpression = (BinaryExpression) expression;
-            return getOperator().equals(binExpression.getOperator())
-                    && left.compareToExpression(binExpression.left)
-                    && right.compareToExpression(binExpression.right);
+            diff.addAll(left.diffToExpression(binExpression.left));
+            diff.addAll(right.diffToExpression(binExpression.right));
+        } else {
+            diff.add(new Pair<>(this, expression));
         }
-        return false;
+        return diff;
     }
+
+    public List<Variable> getFreeVariables(List<Variable> busyVariables) {
+        List<Variable> vars = new ArrayList<>();
+        vars.addAll(left.getFreeVariables(busyVariables));
+        vars.addAll(right.getFreeVariables(busyVariables));
+        return vars;
+    }
+
+    public List<Variable> getBusyVariables() {
+        List<Variable> vars = new ArrayList<>();
+        vars.addAll(left.getBusyVariables());
+        vars.addAll(right.getBusyVariables());
+        return vars;
+    }
+
+    public List<Variable> getAllVariables() {
+        List<Variable> vars = new ArrayList<>();
+        vars.addAll(left.getAllVariables());
+        vars.addAll(right.getAllVariables());
+        return vars;
+    }
+
 }

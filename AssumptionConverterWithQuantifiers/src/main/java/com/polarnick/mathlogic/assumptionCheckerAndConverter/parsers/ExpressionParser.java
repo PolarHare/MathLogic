@@ -27,8 +27,8 @@ import java.util.regex.Pattern;
  */
 public class ExpressionParser {
 
-    private static final String VARIABLE_REGEXP = "[a-z][0-9]*";
-    private static final String PREDICATE_REGEXP = "[A-Z][0-9]*";
+    protected static final String VARIABLE_REGEXP = "[a-z][0-9]*";
+    protected static final String PREDICATE_REGEXP = "[A-Z][0-9]*";
 
     public List<String> getAllVariables(String line) {
         Set<String> matches = new HashSet<String>();
@@ -150,7 +150,7 @@ public class ExpressionParser {
     private Variable parseVariable(StringWithBrackets source, int from, int to) {
         String name = source.string.substring(from, to);
         Preconditions.checkState(name.matches(VARIABLE_REGEXP), "Incorrect variable name: " + name);
-        return new Variable(name);
+        return createNamed(name);
     }
 
     // ⟨предикат⟩ ::= (‘A’...‘Z’) {‘0’...‘9’}* [‘(’ ⟨терм⟩ {‘,’⟨терм⟩}* ‘)’]
@@ -158,7 +158,7 @@ public class ExpressionParser {
         int predicateLength = getMaxPrefixLength(source.string.substring(from, to), PREDICATE_REGEXP);
         String predicateName = source.string.substring(from, from + predicateLength);
         List<Variable> terms = parseTerms(source, from + predicateLength, to);
-        return new Variable(predicateName, terms);
+        return createNamed(predicateName, terms);
     }
 
     // ⟨терм⟩ ::= (‘a’...‘z’) {‘0’...‘9’}* ‘(’ ⟨терм⟩ {‘,’⟨терм⟩}* ‘)’ | ⟨переменная⟩ | ‘(’ ⟨терм⟩ ‘)’
@@ -171,7 +171,7 @@ public class ExpressionParser {
             Preconditions.checkState(variableLength > 0);
             String variableName = source.string.substring(from, from + variableLength);
             List<Variable> terms = parseTerms(source, from + variableLength, to);
-            return new Variable(variableName, terms);
+            return createNamed(variableName, terms);
         }
     }
 
@@ -198,9 +198,14 @@ public class ExpressionParser {
         return terms;
     }
 
-    protected Expression createNamed(String name) {
-        Preconditions.checkState(name.matches("[A-Z][0-9]*"), "Incorrect variable name: " + name);
-        return new Variable(name);
+    final protected Variable createNamed(String name) {
+        return createNamed(name, new ArrayList<>());
+    }
+
+    protected Variable createNamed(String name, List<Variable> terms) {
+        Preconditions.checkState(name.matches(VARIABLE_REGEXP) || name.matches(PREDICATE_REGEXP),
+                "Incorrect variable/predicate name: " + name);
+        return new Variable(name, terms);
     }
 
     public static int getMaxPrefixLength(String string, String regexp) {

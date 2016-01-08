@@ -20,7 +20,7 @@ public class ExpressionParserTest {
     @Test
     public void testParsingTests() throws Exception {
         ExpressionParser parser = new ExpressionParser();
-        for (String name : new String[]{"axiom", "intro", "intro2", "must-fail", "must-fail2", "must-fail3"}) {
+        for (String name : new String[]{"axiom", "intro", "intro2", "must-fail", "must-fail3"}) {
             String filepath = "/com/polarnick/mathlogic/assumptionCheckerAndConverter/" + name + ".in";
             java.net.URL url = ExpressionParserTest.class.getResource(filepath);
             java.nio.file.Path resPath = java.nio.file.Paths.get(url.toURI());
