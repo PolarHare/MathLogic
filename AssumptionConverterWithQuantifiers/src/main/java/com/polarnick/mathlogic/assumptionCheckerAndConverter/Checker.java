@@ -99,7 +99,6 @@ public class Checker {
     private boolean isCorrespondsToForAllAxiom11(Expression expression) {
         // ∀x(ψ) → (ψ[x := θ])
         // @x(A)->B
-        // TODO: проверки на свободу подстановки
         Map<String, Expression> patternValues = new HashMap<>();
         if (!expression.compareToPattern(axiom11Exp, patternValues)) {
             return false;

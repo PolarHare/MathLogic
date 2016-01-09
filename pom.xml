@@ -14,6 +14,7 @@
         <module>Proofer</module>
         <module>RecursiveFunctions</module>
         <module>AssumptionConverterWithQuantifiers</module>
+        <module>Task7</module>
     </modules>
 
     <dependencies>
