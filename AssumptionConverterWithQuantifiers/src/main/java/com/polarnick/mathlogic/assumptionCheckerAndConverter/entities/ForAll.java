@@ -20,9 +20,6 @@ public class ForAll extends Expression {
     public ForAll(Variable variable, Expression expression) {
         this.variable = variable;
         this.expression = expression;
-        if (expression.getBusyVariables().contains(variable)) {
-            throw new LineNumberException(0);
-        }
     }
 
     @Override

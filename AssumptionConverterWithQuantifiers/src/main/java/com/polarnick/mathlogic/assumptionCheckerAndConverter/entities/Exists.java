@@ -20,9 +20,6 @@ public class Exists extends Expression {
     public Exists(Variable variable, Expression expression) {
         this.variable = variable;
         this.expression = expression;
-        if (expression.getBusyVariables().contains(variable)) {
-            throw new LineNumberException(0);
-        }
     }
 
     @Override

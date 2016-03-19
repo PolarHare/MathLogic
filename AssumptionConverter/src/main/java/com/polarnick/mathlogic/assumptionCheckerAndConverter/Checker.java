@@ -235,7 +235,7 @@ public class Checker {
             List<String> input = new ArrayList<String>();
             String curLine = in.readLine();
             while (curLine != null && !curLine.equals(END_OF_PROOF_PREFIX)) {
-                if (!curLine.isEmpty()) {
+                if (!curLine.isEmpty() && !curLine.startsWith("//")) {
                     input.add(curLine);
                 }
                 curLine = in.readLine();

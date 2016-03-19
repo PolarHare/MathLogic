@@ -376,7 +376,7 @@ public class Checker {
             assumptions.add(ass);
         }
         StringBuilder firstLine = new StringBuilder();
-        for (int i = 0; i < assumptions.size() - 1; i++) {
+        for (int i = 0; i < assumptions.size(); i++) {
             resAssumptions.add(assumptions.get(i));
         }
         resAlpha = proof.alphaAssum;
@@ -460,6 +460,7 @@ public class Checker {
             }
             if (line.charAt(i) == ',' && brackets == 0) {
                 res.add(line.substring(afterLastComma, i));
+                afterLastComma = i + 1;
             }
         }
         res.add(line.substring(afterLastComma, line.indexOf("|-")));
@@ -486,13 +487,12 @@ public class Checker {
         }
         ProofWithAssumptions newProof = useDeductionConvertion(new ProofWithAssumptions(exprAssums, alphaAssum, toBeProofed, steps));
         List<String> result = new ArrayList<String>();
-        StringBuilder firstLine = new StringBuilder();
-        for (Expression ass : newProof.assumptions) {
-            firstLine.append(ass + ",");
-        }
-        if (newProof.alphaAssum != null) {
-            firstLine.append(newProof.alphaAssum + "|-" + newProof.toBeProofed);
-            result.add(firstLine.toString());
+        if (newProof.assumptions.size() > 0) {
+            StringBuilder firstLine = new StringBuilder();
+            for (Expression ass : newProof.assumptions) {
+                firstLine.append(ass + ",");
+            }
+            result.add(firstLine.substring(0, firstLine.length() - 1) + "|-" + newProof.toBeProofed);
         }
         for (Expression step : newProof.steps) {
             result.add(step.toString());
@@ -522,7 +522,7 @@ public class Checker {
             List<String> input = new ArrayList<String>();
             String curLine = in.readLine();
             while (curLine != null && !curLine.equals(END_OF_PROOF_PREFIX)) {
-                if (!curLine.isEmpty()) {
+                if (!curLine.isEmpty() && !curLine.startsWith("//")) {
                     input.add(curLine);
                 }
                 curLine = in.readLine();
