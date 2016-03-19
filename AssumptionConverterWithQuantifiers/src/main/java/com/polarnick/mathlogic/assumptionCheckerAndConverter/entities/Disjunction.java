@@ -16,4 +16,10 @@ public class Disjunction extends BinaryExpression {
         return "|";
     }
 
+    public Disjunction substitute(Variable x, Expression expression) {
+        return new Disjunction(
+                this.getLeft().substitute(x, expression),
+                this.getRight().substitute(x, expression));
+    }
+
 }

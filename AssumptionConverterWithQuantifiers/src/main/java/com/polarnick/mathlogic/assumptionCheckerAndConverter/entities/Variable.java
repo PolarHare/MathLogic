@@ -85,7 +85,15 @@ public class Variable extends Expression {
             return diff;
         }
         if (!this.toString().equals(expression.toString())) {
-            diff.add(new Pair<>(this, expression));
+            if (!(expression instanceof Variable)
+                    || !name.equals(((Variable) expression).name)
+                    || variables.size() != ((Variable) expression).variables.size()) {
+                diff.add(new Pair<>(this, expression));
+            } else {
+                for (int i = 0; i < variables.size(); i++) {
+                    diff.addAll(variables.get(i).diffToExpression(((Variable) expression).variables.get(i)));
+                }
+            }
         }
         return diff;
     }
@@ -114,6 +122,14 @@ public class Variable extends Expression {
                 vars.addAll(v.getAllVariables());
             }
             return vars;
+        }
+    }
+
+    public Expression substitute(Variable x, Expression expression) {
+        if (this.equals(x)) {
+            return expression;
+        } else {
+            return this;
         }
     }
 

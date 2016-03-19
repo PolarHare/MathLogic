@@ -116,11 +116,16 @@ public class Checker {
                 } else if (!xInB.compareToExpression(d.second)) {
                     return false;
                 }
+            } else {
+                return false;
             }
         }
 
-        checkSubstitution(x, a, xInB);
-        return true;
+        if (a.substitute(x, xInB).equals(b)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private boolean isCorrespondsToExistsAxiom12(Expression expression) {
@@ -144,11 +149,16 @@ public class Checker {
                 } else if (!xInB.compareToExpression(d.second)) {
                     return false;
                 }
+            } else {
+                return false;
             }
         }
 
-        checkSubstitution(x, a, xInB);
-        return true;
+        if (a.substitute(x, xInB).equals(b)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private void checkSubstitution(Variable x, Expression a, Expression newX) {

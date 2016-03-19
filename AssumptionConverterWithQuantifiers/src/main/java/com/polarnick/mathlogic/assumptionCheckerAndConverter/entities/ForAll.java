@@ -81,4 +81,12 @@ public class ForAll extends Expression {
         vars.addAll(expression.getAllVariables());
         return vars;
     }
+
+    public ForAll substitute(Variable x, Expression expression) {
+        if (variable.equals(x)) {
+            return this;
+        } else {
+            return new ForAll(variable, this.expression.substitute(x, expression));
+        }
+    }
 }

@@ -60,4 +60,8 @@ public class Negation extends Expression {
         return expression.getAllVariables();
     }
 
+    public Negation substitute(Variable x, Expression expression) {
+        return new Negation(this.expression.substitute(x, expression));
+    }
+
 }

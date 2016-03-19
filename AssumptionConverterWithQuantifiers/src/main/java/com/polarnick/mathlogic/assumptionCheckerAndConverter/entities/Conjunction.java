@@ -16,4 +16,10 @@ public class Conjunction extends BinaryExpression {
         return "&";
     }
 
+    public Conjunction substitute(Variable x, Expression expression) {
+        return new Conjunction(
+                this.getLeft().substitute(x, expression),
+                this.getRight().substitute(x, expression));
+    }
+
 }

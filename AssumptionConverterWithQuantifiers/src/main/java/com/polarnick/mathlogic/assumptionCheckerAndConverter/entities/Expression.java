@@ -44,4 +44,5 @@ public abstract class Expression {
 
     public abstract List<Variable> getAllVariables();
 
+    public abstract Expression substitute(Variable x, Expression expression);
 }

@@ -16,4 +16,10 @@ public class Consecution extends BinaryExpression {
         return "->";
     }
 
+    public Consecution substitute(Variable x, Expression expression) {
+        return new Consecution(
+                this.getLeft().substitute(x, expression),
+                this.getRight().substitute(x, expression));
+    }
+
 }

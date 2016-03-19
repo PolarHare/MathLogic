@@ -81,4 +81,12 @@ public class Exists extends Expression {
         vars.addAll(expression.getAllVariables());
         return vars;
     }
+
+    public Exists substitute(Variable x, Expression expression) {
+        if (variable.equals(x)) {
+            return this;
+        } else {
+            return new Exists(variable, this.expression.substitute(x, expression));
+        }
+    }
 }
