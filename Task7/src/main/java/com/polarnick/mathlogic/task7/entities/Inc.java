@@ -13,6 +13,10 @@ public class Inc extends Expression {
         this.expression = expression;
     }
 
+    public Inc rename(String variableKey, Expression value) {
+        return new Inc(this.expression.rename(variableKey, value));
+    }
+
     @Override
     public String toString() {
         boolean withBrackets = true;

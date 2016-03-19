@@ -13,6 +13,14 @@ public class Variable extends Expression {
         this.name = name;
     }
 
+    public Expression rename(String variableKey, Expression value) {
+        if (this.name.equals(variableKey)) {
+            return value;
+        } else {
+            return this;
+        }
+    }
+
     @Override
     public String toString() {
         return name;

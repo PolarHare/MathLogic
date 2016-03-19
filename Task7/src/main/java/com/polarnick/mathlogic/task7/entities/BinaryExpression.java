@@ -17,6 +17,13 @@ public class BinaryExpression extends Expression {
         this.operator = operator;
     }
 
+    public BinaryExpression rename(String variableKey, Expression value) {
+        return new BinaryExpression(
+                this.left.rename(variableKey, value),
+                this.right.rename(variableKey, value),
+                this.operator);
+    }
+
     @Override
     public String toString() {
         return "(" + left + ")" + operator + "(" + right + ")";

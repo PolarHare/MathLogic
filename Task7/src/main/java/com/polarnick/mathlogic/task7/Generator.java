@@ -62,29 +62,41 @@ public class Generator {
     //           a=2 -> (?b(a+b=4))
     public BinaryExpression printProofForI(int i, int n) {
         Variable a = newVar("a");
+//        BinaryExpression aEqualI = newEquals(a, newVal(i));  // a=i
+
+//        Expression tmp = newImpl(aEqualI, newEquals(newSum(a, newVal(0)), newVal(i)));  // a=i -> a+0=i
+        //       a=a+0 -> a=i -> a+0=i
+        BinaryExpression proved1 = printlnArithmeticAxiom2(a, newSum(a, newVal(0)), newVal(i)); // A2: a=b->a=c=>b=c | a=a, b=a+0, c=i
+
+        //       a+0=a  // A6
+        BinaryExpression aPlusZeroA = printlnArithmeticAxiom6(a);
+        //       a=a+0  // a=b->b=a
+        printlnSwapped(aPlusZeroA);
+        //       a=i -> a+0=i
+        println(proved1.right); // Modus ponens
+
+        Expression aZeroEqI = newEquals(newSum(a, newVal(0)), newVal(i));  // a+0=i
         BinaryExpression aEqualI = newEquals(a, newVal(i));  // a=i
 
-        Expression tmp = newImpl(aEqualI, newEquals(newSum(a, newVal(0)), newVal(i)));  // a=i -> a+0=i
-        //       a=a+0 -> a=i -> a+0=i
-        println(newImpl(newEquals(a, newSum(a, newVal(0))), tmp));
-
-        //       a=i -> a+0=i
-        Expression tmp0 = newEquals(newSum(a, newVal(0)), newVal(i));  // a+0=i
-        println(newImpl(aEqualI, tmp0));
-
         List<Expression> steps = new ArrayList<>();
-        steps.add(tmp0);
+        steps.add(aZeroEqI);
         for (int j=0;j <= n-i-1; j++) {
-            Expression tmp1 = newEquals(newSum(a, newVal(j)), newVal(i + j));  // a+j=<i+j>
-            Expression tmp2 = newEquals(newInc(newSum(a, newVal(j))), newVal(i + j + 1));  // (a+j)'=<i+j+1>
-            Expression tmp3 = newEquals(newSum(a, newVal(j+1)), newVal(i + j + 1));  // (a+j)'=<i+j+1>
-            //   a+j=(i+j) -> (a+j)'=(i+j+1)
-            println(newImpl(tmp1, tmp2));
-            //   (a+j)'=(i+j+1) -> a+(j+1)=(i+j+1)
-            println(newImpl(tmp2, tmp3));
+            //   a+j=<i+j> -> (a+j)'=<i+j+1>
+            printlnArithmeticAxiom1(newSum(a, newVal(j)), newVal(i + j)); // A1: a=b->a'=b' | a=a+j, b=i+j
 
-            steps.add(tmp2);
-            steps.add(tmp3);
+            //   a+<j+1>=(a+j)'
+            BinaryExpression aj = printlnArithmeticAxiom5(a, newVal(j)); // A5: a+b'=(a+b)'
+            //   (a+j)'=a+<j+1>
+            printlnSwapped(aj);
+
+            //   (a+j)'=a+<j+1> -> (a+j)'=<i+j+1> -> a+<j+1>=<i+j+1>  | A2: a=b->a=c->b=c
+            BinaryExpression abacbc = printlnArithmeticAxiom2(newInc(newSum(a, newVal(j))), newSum(a, newVal(j+1)), newVal(i + j + 1));
+            //   (a+j)'=<i+j+1> -> a+<j+1>=<i+j+1>
+            println(abacbc.right);
+
+            BinaryExpression acbc = (BinaryExpression) abacbc.right;
+            steps.add(acbc.left);
+            steps.add(acbc.right);
         }
 
         // aEqualI: a=i
@@ -185,7 +197,85 @@ public class Generator {
 
 
     public void println(Expression e) {
+        System.out.println(e.toString());
         out.println(e.toString());
+    }
+
+    // Proofs: expr[key := value]
+    // Pre:
+    //         expr
+    public Expression printlnRename(Expression expr, String key, Expression value) {
+        if (key.equals(value.toString())) {
+            return expr;
+        }
+        Expression someFact = newImpl(newEquals(newVar("x"), newVar("y")), newEquals(newInc(newVar("x")), newInc(newVar("y"))));
+        // Pre: expr
+        println(someFact);  // someFact := x=y->x'=y'
+        println(newImpl(expr, newImpl(someFact, expr)));  // expr->someFact->expr
+        println(newImpl(someFact, expr));  // someFact->expr
+        println(newImpl(someFact, newForEach(key, expr)));  // someFact->@key(expr)
+        println(newForEach(key, expr));  // @key(expr)
+        expr = expr.rename(key, value);
+        println(newImpl(newForEach(key, expr), expr));  // @key(expr)->expr[key:=value]
+        println(expr);  // expr[key:=value]
+        return expr;
+    }
+
+    // Proofs: b=a
+    // Pre:
+    //         a=b
+    public BinaryExpression printlnSwapped(BinaryExpression ab) {
+        Expression a = ab.left;
+        Expression b = ab.right;
+
+        printlnArithmeticAxiom6(newVar("a"));  // a+0=a
+        BinaryExpression a2 = printlnArithmeticAxiom2(newSum(newVar("a"), newVal(0)), newVar("a"), newVar("a"));  // a+0=a->a+0=a->a=a
+        println(a2.right);  // a+0=a->a=a
+        println(newEquals(newVar("a"), newVar("a")));  // a=a
+
+        printlnRename(newEquals(newVar("a"), newVar("a")), "a", a);  // a=a
+        BinaryExpression abaaba = printlnArithmeticAxiom2(a, b, a);  // a=b->a=a->b=a
+        println(abaaba.right);  // a=a->b=a
+        println(newEquals(b, a));  // b=a
+        return newEquals(b, a);
+    }
+
+    // A1: a=b->a'=b'
+    public BinaryExpression printlnArithmeticAxiom1(Expression a, Expression b) {
+        Expression a1 = newImpl(newEquals(newVar("a"), newVar("b")), newEquals(newInc(newVar("a")), newInc(newVar("b"))));
+        println(a1);
+        a1 = printlnRename(a1, "a", a);
+        a1 = printlnRename(a1, "b", b);
+        return (BinaryExpression) a1;
+    }
+
+    // A2: a=b->a=c=>b=c
+    public BinaryExpression printlnArithmeticAxiom2(Expression a, Expression b, Expression c) {
+        Expression a2 = newImpl(
+                newImpl(newEquals(newVar("a"), newVar("b")),
+                        newEquals(newVar("a"), newVar("c"))),
+                newEquals(newVar("b"), newVar("c")));
+        println(a2);
+        a2 = printlnRename(a2, "a", a);
+        a2 = printlnRename(a2, "b", b);
+        a2 = printlnRename(a2, "c", c);
+        return (BinaryExpression) a2;
+    }
+
+    // A5: a+b'=(a+b)'
+    public BinaryExpression printlnArithmeticAxiom5(Expression a, Expression b) {
+        Expression a5 = newEquals(newSum(newVar("a"), newInc(newVar("b"))), newInc(newSum(newVar("a"), newVar("b"))));
+        println(a5);
+        a5 = printlnRename(a5, "a", a);
+        a5 = printlnRename(a5, "b", b);
+        return (BinaryExpression) a5;
+    }
+
+    // A6: a+0=a
+    public BinaryExpression printlnArithmeticAxiom6(Variable a) {
+        BinaryExpression eq = newEquals(newSum(a, newVal(0)), a);
+        println(eq);
+        return eq;
     }
 
     // BinaryExpressions:

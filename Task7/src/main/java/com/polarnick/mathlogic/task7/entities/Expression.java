@@ -9,6 +9,8 @@ import java.util.Objects;
  */
 public abstract class Expression {
 
+    public abstract Expression rename(String variableKey, Expression value);
+
     public abstract String toString();
 
     @Override

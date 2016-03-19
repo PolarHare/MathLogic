@@ -17,6 +17,14 @@ public class Predicate extends Expression {
         this.operator = operator;
     }
 
+    public Predicate rename(String variableKey, Expression value) {
+        assert !this.variable.name.equals(variableKey);
+        return new Predicate(
+                this.variable,
+                this.expression.rename(variableKey, value),
+                this.operator);
+    }
+
     @Override
     public String toString() {
         return operator + variable + "(" + expression + ")";
