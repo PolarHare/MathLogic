@@ -108,6 +108,10 @@ public class Checker {
         Expression b = patternValues.get("B");
         List<Pair<Expression, Expression>> diff = a.diffToExpression(b);
 
+        if (diff.size() == 0) {
+            return true;
+        }
+
         Expression xInB = null;
         for (Pair<Expression, Expression> d : diff) {
             if (d.first.compareToExpression(x)) {
@@ -140,6 +144,10 @@ public class Checker {
         Expression b = patternValues.get("B");
         Exists xa = (Exists) ((Consecution) expression).getRight();
         List<Pair<Expression, Expression>> diff = a.diffToExpression(b);
+
+        if (diff.size() == 0) {
+            return true;
+        }
 
         Expression xInB = null;
         for (Pair<Expression, Expression> d : diff) {
