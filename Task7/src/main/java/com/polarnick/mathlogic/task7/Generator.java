@@ -208,7 +208,7 @@ public class Generator {
         if (key.equals(value.toString())) {
             return expr;
         }
-        Expression someFact = newImpl(newEquals(newVar("x"), newVar("y")), newEquals(newInc(newVar("x")), newInc(newVar("y"))));
+        Expression someFact = newImpl(newNot(newNot(newVar("x"))), newVar("x"));
         // Pre: expr
         println(someFact);  // someFact := x=y->x'=y'
         println(newImpl(expr, newImpl(someFact, expr)));  // expr->someFact->expr
@@ -316,6 +316,10 @@ public class Generator {
 
     public Inc newInc(Expression expression) {
         return new Inc(expression);
+    }
+
+    public Not newNot(Expression expression) {
+        return new Not(expression);
     }
 
     public Expression newVal(int value) {
