@@ -389,7 +389,6 @@ public class Checker {
     private static void add(List<Expression> steps, Expression step) {
         int stepNumber = steps.size() + 1;
         steps.add(step);
-        System.out.println("Steps number: " + stepNumber);
     }
 
     public ProofWithAssumptions useDeductionConvertion(ProofWithAssumptions proof) {
@@ -469,6 +468,7 @@ public class Checker {
                 throw e;
             }
             lineNumber++;
+            System.out.println("Input lines number processed: " + lineNumber);
         }
         return new ProofWithAssumptions(resAssumptions, resAlpha, resToBeProofed, resSteps);
     }
