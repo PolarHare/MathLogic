@@ -80,8 +80,8 @@ public class Checker {
         }
         axiom11Exp = (Consecution) parser.parseExpression(axiom11);
         axiom12Exp = (Consecution) parser.parseExpression(axiom12);
-        forAllInferences = loadExpressions("ExistsMP.in");
-        existsInferences = loadExpressions("ForAllMP.in");
+        forAllInferences = loadExpressions("ForAllMP.in");
+        existsInferences = loadExpressions("ExistsMP.in");
     }
 
     private boolean isCorespondsToAxiom(Expression expression) {
@@ -386,6 +386,12 @@ public class Checker {
         return proof.steps;
     }
 
+    private static void add(List<Expression> steps, Expression step) {
+        int stepNumber = steps.size() + 1;
+        steps.add(step);
+        System.out.println("Steps number: " + stepNumber);
+    }
+
     public ProofWithAssumptions useDeductionConvertion(ProofWithAssumptions proof) {
         List<Expression> resAssumptions = new ArrayList<Expression>();
         Expression resToBeProofed = null;
@@ -404,9 +410,9 @@ public class Checker {
             try {
                 if (isCorespondsToAxiom(expI) || containsIn(assumptions, expI)) {
                     Expression alphaConsSigma = new Consecution(proof.alphaAssum, expI);
-                    resSteps.add(expI);
-                    resSteps.add(new Consecution(expI, alphaConsSigma));
-                    resSteps.add(alphaConsSigma);
+                    add(resSteps, expI);
+                    add(resSteps, new Consecution(expI, alphaConsSigma));
+                    add(resSteps, alphaConsSigma);
                 } else if (expI.compareToExpression(proof.alphaAssum)) {
                     Expression AA = new Consecution(proof.alphaAssum, proof.alphaAssum);
                     Expression A_AA = new Consecution(proof.alphaAssum, AA);
@@ -417,18 +423,20 @@ public class Checker {
                     Expression lemma3 = new Consecution(A__AA_A, AA);
                     Expression lemma4 = A__AA_A;
                     Expression lemma5 = AA;
-                    resSteps.add(lemma1);
-                    resSteps.add(lemma2);
-                    resSteps.add(lemma3);
-                    resSteps.add(lemma4);
-                    resSteps.add(lemma5);
+                    add(resSteps, lemma1);
+                    add(resSteps, lemma2);
+                    add(resSteps, lemma3);
+                    add(resSteps, lemma4);
+                    add(resSteps, lemma5);
                 } else {
                     List<Expression> steps = stepsForAllRule(expI);
                     if (steps == null) {
                         steps = stepsExistsRule(expI);
                     }
                     if (steps != null) {
-                        resSteps.addAll(steps);
+                        for (Expression step : steps) {
+                            add(resSteps, step);
+                        }
                     } else {
                         Expression expK = null;
                         Expression expJ = null;
@@ -449,9 +457,9 @@ public class Checker {
                             Expression res2 = new Consecution(new Consecution(proof.alphaAssum, new Consecution(expJ, expI)),
                                     new Consecution(proof.alphaAssum, expI));
                             Expression res1 = new Consecution(new Consecution(proof.alphaAssum, expJ), res2);
-                            resSteps.add(res1);
-                            resSteps.add(res2);
-                            resSteps.add(new Consecution(proof.alphaAssum, expI));
+                            add(resSteps, res1);
+                            add(resSteps, res2);
+                            add(resSteps, new Consecution(proof.alphaAssum, expI));
                         }
                     }
                 }
