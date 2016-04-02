@@ -80,7 +80,7 @@ public class Generator {
 
         List<Expression> steps = new ArrayList<>();
         steps.add(aZeroEqI);
-        for (int j=0;j <= n-i-1; j++) {
+        for (int j = 0; j <= n - i - 1; j++) {
             //   a+j=<i+j> -> (a+j)'=<i+j+1>
             printlnArithmeticAxiom1(newSum(a, newVal(j)), newVal(i + j)); // A1: a=b->a'=b' | a=a+j, b=i+j
 
@@ -90,7 +90,7 @@ public class Generator {
             printlnSwapped(aj);
 
             //   (a+j)'=a+<j+1> -> (a+j)'=<i+j+1> -> a+<j+1>=<i+j+1>  | A2: a=b->a=c->b=c
-            BinaryExpression abacbc = printlnArithmeticAxiom2(newInc(newSum(a, newVal(j))), newSum(a, newVal(j+1)), newVal(i + j + 1));
+            BinaryExpression abacbc = printlnArithmeticAxiom2(newInc(newSum(a, newVal(j))), newSum(a, newVal(j + 1)), newVal(i + j + 1));
             //   (a+j)'=<i+j+1> -> a+<j+1>=<i+j+1>
             println(abacbc.right);
 
@@ -159,8 +159,8 @@ public class Generator {
         BinaryExpression implication = newImpl(xsOrs[xs.size() - 1], y);  // (x0 | x1 | ... | xn) -> y
         for (int i = 1; i < xs.size(); i++) {
             Expression tmp2 = newImpl(xs.get(i), y);  // x(i+1) -> y
-            Expression tmp3 = newImpl(xsOrs[i], y);  // (x0 | x1 | ... | x(i+1) -> y)
-            //   (x0 | x1 | ... | xi -> y) -> (x(i+1) -> y) -> (x0 | x1 | ... | x(i+1)) -> y
+            Expression tmp3 = newImpl(xsOrs[i], y);  // (x0 | x1 | ... | x(i+1)) -> y
+            //   (x0 | x1 | ... | xi -> y) -> (x(i+1) -> y) -> ((x0 | x1 | ... | x(i+1)) -> y)
             println(newImpl(newImpl(xsOrs[i - 1], y), newImpl(tmp2, tmp3)));
             //   (x(i+1) -> y) -> (x0 | x1 | ... | x(i+1) -> y)
             println(newImpl(tmp2, tmp3));
@@ -249,12 +249,12 @@ public class Generator {
         return (BinaryExpression) a1;
     }
 
-    // A2: a=b->a=c=>b=c
+    // A2: a=b->a=c->b=c
     public BinaryExpression printlnArithmeticAxiom2(Expression a, Expression b, Expression c) {
         Expression a2 = newImpl(
-                newImpl(newEquals(newVar("a"), newVar("b")),
-                        newEquals(newVar("a"), newVar("c"))),
-                newEquals(newVar("b"), newVar("c")));
+                newEquals(newVar("a"), newVar("b")),
+                newImpl(newEquals(newVar("a"), newVar("c")),
+                        newEquals(newVar("b"), newVar("c"))));
         println(a2);
         a2 = printlnRename(a2, "a", a);
         a2 = printlnRename(a2, "b", b);
@@ -324,7 +324,7 @@ public class Generator {
 
     public Expression newVal(int value) {
         Expression res = new Variable("0");
-        for (int i=1;i <= value; i++) {
+        for (int i = 1; i <= value; i++) {
             res = new Inc(res);
         }
         return res;
