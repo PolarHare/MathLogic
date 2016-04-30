@@ -123,10 +123,21 @@ public class Generator {
             printMergedImplications(aEqualI, x2, x3);
         }
 
-        //           a=i -> (?b(a+b=n))
-        BinaryExpression res = newImpl(aEqualI, newExists("b", newEquals(newSum(a, newVar("b")), newVal(n))));
-        println(res);
-        return res;
+        Expression exampleSolution = steps.get(steps.size() - 1); // a+(n-i)=n
+        Expression existsSolution = newExists("b", newEquals(newSum(a, newVar("b")), newVal(n))); // (?b(a+b=n))
+
+        //           (a+(n-i)=n) -> (?b(a+b=n))
+        Expression tmp1 = println(newImpl(exampleSolution, existsSolution));
+        //           a=i -> ((a+(n-i)=n) -> (?b(a+b=n)))
+        Expression tmp2 = println(newImpl(aEqualI, tmp1));
+
+        BinaryExpression tmp3 = newImpl(tmp2, newImpl(aEqualI, existsSolution));
+        //           (a=i -> (a+(n-i)=n)) -> (a=i -> ((a+(n-i)=n) -> (?b(a+b=n)))) -> (a=i -> (?b(a+b=n)))
+        println(newImpl(newImpl(aEqualI, exampleSolution), tmp3));
+        //           (a=i -> ((a+(n-i)=n) -> (?b(a+b=n)))) -> (a=i -> (?b(a+b=n)))
+        println(tmp3);
+        //           (a=i -> (?b(a+b=n)))
+        return (BinaryExpression) println(newImpl(aEqualI, existsSolution));
     }
 
     // Proofs:   (x0 | x1 | ... | xn) -> y
@@ -198,9 +209,10 @@ public class Generator {
     }
 
 
-    public void println(Expression e) {
+    public Expression println(Expression e) {
         System.out.println(e.toString());
         out.println(e.toString());
+        return e;
     }
 
     // Proofs: expr[key := value]
