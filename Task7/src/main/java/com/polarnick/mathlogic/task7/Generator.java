@@ -208,17 +208,17 @@ public class Generator {
         if (key.equals(value.toString())) {
             return expr;
         }
-        Expression someFact = newImpl(newNot(newNot(newVar("x"))), newVar("x"));
+        Expression someFact = newImpl(newNot(newNot(newVar("X"))), newVar("X"));
         // Pre: expr
         println(someFact);  // someFact := x=y->x'=y'
         println(newImpl(expr, newImpl(someFact, expr)));  // expr->someFact->expr
         println(newImpl(someFact, expr));  // someFact->expr
         println(newImpl(someFact, newForEach(key, expr)));  // someFact->@key(expr)
         println(newForEach(key, expr));  // @key(expr)
-        expr = expr.rename(key, value);
-        println(newImpl(newForEach(key, expr), expr));  // @key(expr)->expr[key:=value]
-        println(expr);  // expr[key:=value]
-        return expr;
+        Expression renamedExpr = expr.rename(key, value);
+        println(newImpl(newForEach(key, expr), renamedExpr));  // @key(expr)->expr[key:=value]
+        println(renamedExpr);  // expr[key:=value]
+        return renamedExpr;
     }
 
     // Proofs: b=a
