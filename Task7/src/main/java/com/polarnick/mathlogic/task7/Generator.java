@@ -184,6 +184,8 @@ public class Generator {
         BinaryExpression bc = newImpl(b, c);
         BinaryExpression ac = newImpl(a, c);
         BinaryExpression abc = newImpl(a, bc);
+        // (b -> c) -> a -> (b -> c)
+        println(newImpl(bc, abc));
         // a -> (b -> c)
         println(abc);
         // (a -> b) -> (a -> b -> c) -> (a -> c)
