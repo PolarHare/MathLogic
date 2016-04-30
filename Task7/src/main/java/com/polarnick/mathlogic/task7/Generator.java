@@ -128,6 +128,8 @@ public class Generator {
 
         //           (a+(n-i)=n) -> (?b(a+b=n))
         Expression tmp1 = println(newImpl(exampleSolution, existsSolution));
+        //           ((a+(n-i)=n) -> (?b(a+b=n))) -> a=i -> ((a+(n-i)=n) -> (?b(a+b=n))))
+        println(newImpl(tmp1, newImpl(aEqualI, tmp1)));
         //           a=i -> ((a+(n-i)=n) -> (?b(a+b=n)))
         Expression tmp2 = println(newImpl(aEqualI, tmp1));
 
